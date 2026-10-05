@@ -5,6 +5,8 @@ import com.tienda.backend.domain.repository.CategoriaRepository;
 import com.tienda.backend.infrastructure.persistence.entity.CategoriaEntity;
 import com.tienda.backend.infrastructure.persistence.mapper.CategoriaEntityMapper;
 import com.tienda.backend.infrastructure.persistence.repository.CategoriaJpaRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -35,11 +37,9 @@ public class CategoriaRepositoryAdapter implements CategoriaRepository {
     }
 
     @Override
-    public List<Categoria> buscarTodas() {
-        return categoriaJpaRepository.findAll()
-                .stream()
-                .map(entityMapper::toDomain)
-                .toList();
+    public Page<Categoria> buscarTodas(Pageable pageable) {
+        return categoriaJpaRepository.findAll(pageable)
+                .map(entityMapper::toDomain);
     }
 
     @Override

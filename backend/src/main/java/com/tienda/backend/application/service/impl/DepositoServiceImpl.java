@@ -8,11 +8,13 @@ import com.tienda.backend.domain.exception.RecursoDuplicadoException;
 import com.tienda.backend.domain.exception.RecursoNoEncontradoException;
 import com.tienda.backend.domain.model.Deposito;
 import com.tienda.backend.domain.repository.DepositoRepository;
+import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.domain.Pageable;
 
 @Service
 @Transactional
@@ -48,11 +50,9 @@ public class DepositoServiceImpl implements DepositoService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<DepositoResponse> listarTodo() {
-        return depositoRepository.listarTodas()
-                .stream()
-                .map(depositoDtoMapper::toResponse)
-                .toList();
+    public Page<DepositoResponse> listarTodo(Pageable pageable) {
+        return depositoRepository.listarTodas(pageable)
+                .map(depositoDtoMapper::toResponse);
     }
 
     @Override

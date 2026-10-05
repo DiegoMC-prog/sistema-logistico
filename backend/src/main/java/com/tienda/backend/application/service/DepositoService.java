@@ -4,6 +4,8 @@ import com.tienda.backend.application.dto.request.DepositoRequest;
 import com.tienda.backend.application.dto.response.DepositoResponse;
 
 import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 public interface DepositoService {
 
@@ -11,7 +13,7 @@ public interface DepositoService {
 
     DepositoResponse obtenerPorId(Long id);
 
-    List<DepositoResponse> listarTodo();
+    Page<DepositoResponse> listarTodo(Pageable pageable);
 
     DepositoResponse actualizar(Long id, DepositoRequest request);
 

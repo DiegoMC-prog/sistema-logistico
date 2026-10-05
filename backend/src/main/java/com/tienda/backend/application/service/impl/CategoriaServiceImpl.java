@@ -8,10 +8,11 @@ import com.tienda.backend.domain.exception.RecursoDuplicadoException;
 import com.tienda.backend.domain.exception.RecursoNoEncontradoException;
 import com.tienda.backend.domain.model.Categoria;
 import com.tienda.backend.domain.repository.CategoriaRepository;
+import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
+import org.springframework.data.domain.Pageable;
 
 @Service
 @Transactional
@@ -51,11 +52,9 @@ public class CategoriaServiceImpl implements CategoriaService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<CategoriaResponse> obtenerTodas() {
-        return categoriaRepository.buscarTodas()
-                .stream()
-                .map(categoriaDtoMapper::toResponse)
-                .toList();
+    public Page<CategoriaResponse> obtenerTodas(Pageable pageable) {
+        return categoriaRepository.buscarTodas(pageable)
+                .map(categoriaDtoMapper::toResponse);
     }
 
     @Override

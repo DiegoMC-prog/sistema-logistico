@@ -1,6 +1,8 @@
 package com.tienda.backend.domain.repository;
 
 import com.tienda.backend.domain.model.Deposito;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 import java.util.Optional;
@@ -11,7 +13,7 @@ public interface DepositoRepository {
 
     Optional<Deposito> buscarPorId(Long id);
 
-    List<Deposito> listarTodas();
+    Page<Deposito> listarTodas(Pageable pageable);
 
     boolean existePorNombre(String nombre);
 

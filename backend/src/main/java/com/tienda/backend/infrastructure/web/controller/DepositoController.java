@@ -4,11 +4,13 @@ import com.tienda.backend.application.dto.request.DepositoRequest;
 import com.tienda.backend.application.dto.response.DepositoResponse;
 import com.tienda.backend.application.service.DepositoService;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
 import java.util.List;
+import org.springframework.data.domain.Pageable;
 
 @RestController
 @RequestMapping("/api/v1/depositos")
@@ -32,8 +34,8 @@ public class DepositoController {
     }
 
     @GetMapping
-    public ResponseEntity<List<DepositoResponse>> obtenerTodos() {
-        return ResponseEntity.ok(depositoService.listarTodo());
+    public ResponseEntity<Page<DepositoResponse>> obtenerTodos(Pageable pageable) {
+        return ResponseEntity.ok(depositoService.listarTodo(pageable));
     }
 
     @PutMapping("/{id}")

@@ -4,11 +4,13 @@ import com.tienda.backend.application.dto.request.CategoriaRequest;
 import com.tienda.backend.application.dto.response.CategoriaResponse;
 import com.tienda.backend.application.service.CategoriaService;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
 import java.util.List;
+import org.springframework.data.domain.Pageable;
 
 @RestController
 @RequestMapping("/api/v1/categorias")
@@ -33,8 +35,8 @@ public class CategoriaController {
     }
 
     @GetMapping
-    public ResponseEntity<List<CategoriaResponse>> obtenerTodas(){
-        return ResponseEntity.ok(categoriaService.obtenerTodas());
+    public ResponseEntity<Page<CategoriaResponse>> obtenerTodas(Pageable pageable){
+        return ResponseEntity.ok(categoriaService.obtenerTodas(pageable));
     }
 
     @PutMapping("/{id}")

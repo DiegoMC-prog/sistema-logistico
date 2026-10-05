@@ -5,6 +5,8 @@ import com.tienda.backend.domain.repository.DepositoRepository;
 import com.tienda.backend.infrastructure.persistence.entity.DepositoEntity;
 import com.tienda.backend.infrastructure.persistence.mapper.DepositoEntityMapper;
 import com.tienda.backend.infrastructure.persistence.repository.DepositoJpaRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -36,11 +38,9 @@ public class DepositoRepositoryAdapter implements DepositoRepository {
     }
 
     @Override
-    public List<Deposito> listarTodas() {
-        return depositoJpaRepository.findAll()
-                .stream()
-                .map(depositoEntityMapper::toDomain)
-                .toList();
+    public Page<Deposito> listarTodas(Pageable pageable) {
+        return depositoJpaRepository.findAll(pageable)
+                .map(depositoEntityMapper::toDomain);
     }
 
     @Override
