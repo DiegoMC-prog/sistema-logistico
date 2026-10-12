@@ -3,6 +3,7 @@ package com.tienda.backend.application.service.impl;
 import com.tienda.backend.application.dto.request.ProductoRequest;
 import com.tienda.backend.application.dto.response.PageResponse;
 import com.tienda.backend.application.dto.response.ProductoResponse;
+import com.tienda.backend.application.dto.response.ProductoStatsResponse;
 import com.tienda.backend.application.mapper.ProductoDtoMapper;
 import com.tienda.backend.application.service.ProductoService;
 import com.tienda.backend.domain.exception.RecursoNoEncontrado;
@@ -124,6 +125,16 @@ public class ProductoServiceImpl implements ProductoService {
         }
 
         productoRepository.eliminar(id);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ProductoStatsResponse obtenerEstadisticas() {
+        long totalProductos = productoRepository.contarTotal();
+        long activos = productoRepository.contarActivos();
+        long inactivos = productoRepository.contarInactivos();
+
+        return new ProductoStatsResponse(totalProductos, activos, inactivos);
     }
 
     private Categoria obtenerCategoriaOError(Long categoriaId) {

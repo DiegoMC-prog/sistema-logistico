@@ -9,7 +9,6 @@ import com.tienda.backend.application.service.UsuarioService;
 import com.tienda.backend.domain.exception.RecursoNoEncontrado;
 import com.tienda.backend.domain.model.Usuario;
 import com.tienda.backend.domain.repository.UsuarioRepository;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -26,8 +25,8 @@ public class UsuarioServiceImpl implements UsuarioService {
     private final PasswordEncoder passwordEncoder;
 
     public UsuarioServiceImpl(UsuarioRepository usuarioRepository,
-                              UsuarioDtoMapper mapper,
-                              PasswordEncoder passwordEncoder) {
+            UsuarioDtoMapper mapper,
+            PasswordEncoder passwordEncoder) {
         this.usuarioRepository = usuarioRepository;
         this.mapper = mapper;
         this.passwordEncoder = passwordEncoder;
@@ -70,7 +69,8 @@ public class UsuarioServiceImpl implements UsuarioService {
 
         if (!usuario.getEmail().equalsIgnoreCase(request.email().trim())
                 && usuarioRepository.existePorEmail(request.email().trim().toLowerCase())) {
-            throw new IllegalArgumentException("El correo electrónico '" + request.email().trim() + "' ya está en uso por otro usuario.");
+            throw new IllegalArgumentException(
+                    "El correo electrónico '" + request.email().trim() + "' ya está en uso por otro usuario.");
         }
 
         usuario.actualizarPerfil(request.nombre(), request.apellido(), request.email());

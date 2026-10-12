@@ -41,8 +41,14 @@
   --spacing-filter: 12rem;
   --spacing-form: 56rem;
   --spacing-textarea: 7rem;
+  --spacing-upload: 15rem;
+  --spacing-modal: 48rem;
+  --spacing-detail: 11rem;
+  --spacing-description: 18rem;
+  --spacing-status: 10rem;
 
   --grid-template-columns-dashboard: minmax(0, 1.45fr) minmax(20rem, 0.8fr);
+  --grid-template-columns-form: 14rem minmax(0, 1fr);
   --shadow-card: 0 1px 2px rgb(15 23 42 / 4%);
 }
 

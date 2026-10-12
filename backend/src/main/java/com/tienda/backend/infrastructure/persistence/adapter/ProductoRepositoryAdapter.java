@@ -63,4 +63,19 @@ public class ProductoRepositoryAdapter implements ProductoRepository {
     public void eliminar(Long id) {
         productoJpaRepository.deleteById(id);
     }
+
+    @Override
+    public long contarTotal() {
+        return productoJpaRepository.count();
+    }
+
+    @Override
+    public long contarActivos() {
+        return productoJpaRepository.countByEstado(true);
+    }
+
+    @Override
+    public long contarInactivos() {
+        return productoJpaRepository.countByEstado(false);
+    }
 }

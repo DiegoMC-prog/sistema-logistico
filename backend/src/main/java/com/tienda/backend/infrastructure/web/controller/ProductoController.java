@@ -3,6 +3,7 @@ package com.tienda.backend.infrastructure.web.controller;
 import com.tienda.backend.application.dto.request.ProductoRequest;
 import com.tienda.backend.application.dto.response.PageResponse;
 import com.tienda.backend.application.dto.response.ProductoResponse;
+import com.tienda.backend.application.dto.response.ProductoStatsResponse;
 import com.tienda.backend.application.service.ProductoService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -23,6 +24,11 @@ public class ProductoController {
     public ResponseEntity<ProductoResponse> crear(@Valid @RequestBody ProductoRequest request) {
         ProductoResponse response = productoService.crear(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @GetMapping("/stats")
+    public ResponseEntity<ProductoStatsResponse> obtenerEstadisticas() {
+        return ResponseEntity.ok(productoService.obtenerEstadisticas());
     }
 
     @GetMapping("/{id}")

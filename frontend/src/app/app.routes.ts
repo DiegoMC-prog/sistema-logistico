@@ -23,6 +23,11 @@ export const routes: Routes = [
           import('./features/depositos/pages/deposito-list/deposito-list').then((m) => m.DepositoList),
       },
       {
+        path: 'productos',
+        loadComponent: () =>
+          import('./features/productos/pages/producto-list/producto-list').then((m) => m.ProductoList),
+      },
+      {
         path: '',
         redirectTo: 'categorias',
         pathMatch: 'full',

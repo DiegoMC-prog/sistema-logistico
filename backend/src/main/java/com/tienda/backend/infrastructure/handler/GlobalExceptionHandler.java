@@ -49,4 +49,14 @@ public class GlobalExceptionHandler {
                 "detalles", errores
         ));
     }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<Map<String, Object>> handleExceptionGeneral(Exception e) {
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
+                "timestamp", LocalDateTime.now(),
+                "status", HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                "error", "Error interno del servidor",
+                "mensaje", e.getMessage() != null ? e.getMessage() : "Ocurrió un error inesperado"
+        ));
+    }
 }

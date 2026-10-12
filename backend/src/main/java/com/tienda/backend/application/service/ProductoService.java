@@ -3,6 +3,7 @@ package com.tienda.backend.application.service;
 import com.tienda.backend.application.dto.request.ProductoRequest;
 import com.tienda.backend.application.dto.response.PageResponse;
 import com.tienda.backend.application.dto.response.ProductoResponse;
+import com.tienda.backend.application.dto.response.ProductoStatsResponse;
 
 public interface ProductoService {
     ProductoResponse crear(ProductoRequest request);
@@ -11,4 +12,5 @@ public interface ProductoService {
     ProductoResponse actualizar(Long id, ProductoRequest request);
     ProductoResponse cambiarEstado(Long id, boolean estado);
     void eliminar(Long id);
+    ProductoStatsResponse obtenerEstadisticas();
 }

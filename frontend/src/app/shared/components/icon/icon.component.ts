@@ -5,10 +5,13 @@ export type IconName =
   | 'alert'
   | 'barcode'
   | 'box'
+  | 'camera'
   | 'chevron'
   | 'clipboard'
+  | 'close'
   | 'download'
   | 'edit'
+  | 'eye'
   | 'grid'
   | 'help'
   | 'location'
@@ -20,6 +23,7 @@ export type IconName =
   | 'sun'
   | 'trash'
   | 'truck'
+  | 'upload'
   | 'user';
 
 @Component({
@@ -54,12 +58,19 @@ export type IconName =
           <path d="m21 8-9-5-9 5 9 5 9-5Z" />
           <path d="m3 8 9 5v9l9-5V8M12 13v9" />
         }
+        @case ('camera') {
+          <path d="M4 7h3l1.5-2h7L17 7h3v12H4Z" />
+          <circle cx="12" cy="13" r="3" />
+        }
         @case ('chevron') {
           <path d="m9 18 6-6-6-6" />
         }
         @case ('clipboard') {
           <rect x="5" y="4" width="14" height="17" rx="2" />
           <path d="M9 4.5V3h6v1.5M9 10h6m-6 4h6m-6 4h4" />
+        }
+        @case ('close') {
+          <path d="M6 6l12 12M18 6 6 18" />
         }
         @case ('download') {
           <path d="M12 3v12m0 0 4-4m-4 4-4-4" />
@@ -68,6 +79,10 @@ export type IconName =
         @case ('edit') {
           <path d="m14 4 6 6L9 21H3v-6L14 4Z" />
           <path d="m12 6 6 6" />
+        }
+        @case ('eye') {
+          <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z" />
+          <circle cx="12" cy="12" r="2.5" />
         }
         @case ('grid') {
           <rect x="3" y="3" width="7" height="7" rx="1" />
@@ -112,6 +127,10 @@ export type IconName =
           <path d="M3 6h11v11H3zM14 10h4l3 3v4h-7z" />
           <circle cx="7" cy="18" r="2" />
           <circle cx="17" cy="18" r="2" />
+        }
+        @case ('upload') {
+          <path d="M12 16V4m0 0L8 8m4-4 4 4" />
+          <path d="M4 15v5h16v-5" />
         }
         @case ('user') {
           <circle cx="12" cy="8" r="4" />

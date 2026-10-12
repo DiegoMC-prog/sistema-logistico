@@ -15,4 +15,8 @@ public interface ProductoRepository {
     boolean existePorCodigoBarrasYIdDistinto(String codigoBarras, Long id);
     boolean existePorCategoriaId(Long categoriaId);
     void eliminar(Long id);
+
+    long contarTotal();
+    long contarActivos();
+    long contarInactivos();
 }

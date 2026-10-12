@@ -24,9 +24,9 @@ public interface ProductoJpaRepository extends JpaRepository<ProductoEntity, Lon
 
     @EntityGraph(attributePaths = {"categoria"})
     @Query("SELECT p FROM ProductoEntity p WHERE " +
-           "(:busqueda IS NULL OR LOWER(p.nombre) LIKE LOWER(CONCAT('%', :busqueda, '%')) OR LOWER(p.codigoBarras) LIKE LOWER(CONCAT('%', :busqueda, '%'))) AND " +
-           "(:categoriaId IS NULL OR p.categoria.id = :categoriaId) AND " +
-           "(:estado IS NULL OR p.estado = :estado)")
+           "(CAST(:busqueda AS string) IS NULL OR LOWER(p.nombre) LIKE LOWER(CONCAT('%', CAST(:busqueda AS string), '%')) OR LOWER(p.codigoBarras) LIKE LOWER(CONCAT('%', CAST(:busqueda AS string), '%'))) AND " +
+           "(CAST(:categoriaId AS long) IS NULL OR p.categoria.id = :categoriaId) AND " +
+           "(CAST(:estado AS boolean) IS NULL OR p.estado = :estado)")
     Page<ProductoEntity> buscarPorFiltros(
             @Param("busqueda") String busqueda,
             @Param("categoriaId") Long categoriaId,
@@ -48,4 +48,6 @@ public interface ProductoJpaRepository extends JpaRepository<ProductoEntity, Lon
 
     @Query("SELECT COUNT(DISTINCT p.categoria.id) FROM ProductoEntity p")
     long countCategoriasEnUso();
+
+    long countByEstado(Boolean estado);
 }

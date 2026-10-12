@@ -47,12 +47,12 @@ export class DashboardLayoutComponent implements OnInit {
 
   workspaceNav: NavItem[] = [
     { label: 'Overview', route: '/dashboard', icon: 'grid' },
-    { label: 'Inventory', route: '/inventario', icon: 'box', badge: '1,284' },
+    { label: 'Productos', route: '/productos', icon: 'box' },
   ];
 
   manageNav: NavItem[] = [
-    { label: 'Categorias', route: '/categorias', icon: 'clipboard' },
-    { label: 'Depositos', route: '/depositos', icon: 'location' },
+    { label: 'Categorías', route: '/categorias', icon: 'clipboard' },
+    { label: 'Depósitos', route: '/depositos', icon: 'location' },
   ];
 
   ngOnInit(): void {
@@ -111,9 +111,9 @@ export class DashboardLayoutComponent implements OnInit {
     } else if (url.includes('/depositos') || url.includes('/warehouses')) {
       this.currentTitle.set('Depósitos');
       this.currentSubtitle.set('Administra instalaciones de almacenamiento y su disponibilidad operativa');
-    } else if (url.includes('/inventario') || url.includes('/inventory')) {
-      this.currentTitle.set('Inventory');
-      this.currentSubtitle.set('1,284 products across 4 warehouses');
+    } else if (url.includes('/productos')) {
+      this.currentTitle.set('Productos');
+      this.currentSubtitle.set('Gestión de productos y catálogo general');
     } else if (url.includes('/dashboard') || url.includes('/overview')) {
       this.currentTitle.set('Dashboard');
       this.currentSubtitle.set('Here’s what’s happening across your warehouse today');
