@@ -1,8 +1,0 @@
-CREATE TABLE depositos(
-    id BIGSERIAL PRIMARY KEY,
-    nombre VARCHAR(150) NOT NULL,
-    descripcion TEXT,
-    activo BOOLEAN DEFAULT TRUE,
-    created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW()
-)
