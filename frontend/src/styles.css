@@ -1,0 +1,169 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: ui-monospace, "SFMono-Regular", monospace;
+
+  --color-brand: #1e293b;
+  --color-brand-hover: #334155;
+  --color-accent: #10b981;
+  --color-accent-soft: #d1fae5;
+  --color-canvas: #f8fafc;
+  --color-surface: #ffffff;
+  --color-subtle: #f1f5f9;
+  --color-table-head: #f8fafc;
+  --color-border: #e2e8f0;
+  --color-ink: #0f172a;
+  --color-muted: #64748b;
+  --color-faint: #94a3b8;
+  --color-sidebar-muted: #94a3b8;
+  --color-success: #10b981;
+  --color-success-dark: #047857;
+  --color-success-soft: #d1fae5;
+  --color-danger: #ef4444;
+  --color-danger-dark: #b91c1c;
+  --color-danger-soft: #fee2e2;
+  --color-warning: #f59e0b;
+  --color-warning-dark: #b45309;
+  --color-warning-soft: #fef3c7;
+  --color-info: #2563eb;
+  --color-info-soft: #dbeafe;
+  --color-overlay: rgb(15 23 42 / 55%);
+
+  --spacing-sidebar: 16rem;
+  --spacing-header: 5rem;
+  --spacing-stock: 9rem;
+  --spacing-product: 17rem;
+  --spacing-search: 28rem;
+  --spacing-filter: 12rem;
+  --spacing-form: 56rem;
+  --spacing-textarea: 7rem;
+
+  --grid-template-columns-dashboard: minmax(0, 1.45fr) minmax(20rem, 0.8fr);
+  --shadow-card: 0 1px 2px rgb(15 23 42 / 4%);
+}
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  html {
+    color-scheme: light;
+  }
+
+  html:has(.dark) {
+    color-scheme: dark;
+  }
+
+  body {
+    margin: 0;
+    min-width: 20rem;
+    min-height: 100vh;
+    background: var(--color-canvas);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+  }
+
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
+  }
+
+  button,
+  select {
+    cursor: pointer;
+  }
+
+  .dark {
+    --color-canvas: #0f172a;
+    --color-surface: #172033;
+    --color-subtle: #1e293b;
+    --color-table-head: #111b2d;
+    --color-border: #2b3a50;
+    --color-ink: #f8fafc;
+    --color-muted: #94a3b8;
+    --color-faint: #64748b;
+    --color-accent-soft: #064e3b;
+    --color-success-soft: #063f35;
+    --color-success-dark: #6ee7b7;
+    --color-danger-soft: #4c1d26;
+    --color-danger-dark: #fca5a5;
+    --color-warning-soft: #422f13;
+    --color-warning-dark: #fcd34d;
+    --color-info-soft: #172c55;
+    --color-info: #60a5fa;
+  }
+}
+
+/* ==========================================================================
+   Micro-animations & Transitions (Modals, Skeleton & Data Loading)
+   ========================================================================== */
+@keyframes backdropFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes modalScaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.94) translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes rowFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.animate-backdrop-in {
+  animation: backdropFadeIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-modal-in {
+  animation: modalScaleIn 0.26s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-row-in {
+  animation: rowFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--color-subtle) 25%,
+    var(--color-border) 37%,
+    var(--color-subtle) 63%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.6s ease-in-out infinite;
+}
+

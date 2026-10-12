@@ -1,0 +1,180 @@
+<div class="min-h-screen bg-canvas font-sans text-ink">
+  <!-- Toast global notifications -->
+  <app-toast-container />
+
+  <!-- Mobile drawer backdrop -->
+  @if (menuOpen()) {
+    <button
+      aria-label="Close navigation"
+      class="fixed inset-0 z-30 bg-overlay lg:hidden cursor-default transition-opacity"
+      (click)="closeMenu()"
+      type="button"
+    ></button>
+  }
+
+  <!-- Sidebar -->
+  <aside
+    class="fixed inset-y-0 left-0 z-40 flex w-sidebar flex-col bg-brand px-4 py-6 text-white transition-transform duration-300 lg:translate-x-0"
+    [class.translate-x-0]="menuOpen()"
+    [class.-translate-x-full]="!menuOpen()"
+  >
+    <!-- Brand -->
+    <div class="px-2 flex items-center gap-3">
+      <div class="grid size-9 place-items-center rounded-lg bg-accent text-white shadow-sm">
+        <app-icon name="box" svgClass="size-5" />
+      </div>
+      <div>
+        <div class="text-base font-bold tracking-tight text-white leading-tight">Stockline</div>
+        <div class="text-xs text-sidebar-muted">Warehouse OS</div>
+      </div>
+    </div>
+
+    <!-- Workspace section -->
+    <div class="mb-2 mt-10 px-3 text-xs font-semibold uppercase tracking-wider text-sidebar-muted">
+      Workspace
+    </div>
+    <nav class="flex flex-col gap-1">
+      @for (item of workspaceNav; track item.label) {
+        <a
+          [routerLink]="item.route"
+          routerLinkActive="bg-white/10 text-white"
+          [routerLinkActiveOptions]="{ exact: false }"
+          class="flex h-11 items-center gap-3 rounded-lg px-3 text-sm font-medium text-sidebar-muted transition hover:bg-white/5 hover:text-white"
+        >
+          <app-icon [name]="item.icon" svgClass="size-5" />
+          <span>{{ item.label }}</span>
+          @if (item.badge) {
+            <span class="ml-auto rounded-full bg-white/10 px-2 py-0.5 text-xs font-semibold">
+              {{ item.badge }}
+            </span>
+          }
+        </a>
+      }
+    </nav>
+
+    <!-- Manage section -->
+    <div class="mb-2 mt-8 px-3 text-xs font-semibold uppercase tracking-wider text-sidebar-muted">
+      Manage
+    </div>
+    <nav class="flex flex-col gap-1">
+      @for (item of manageNav; track item.label) {
+        <a
+          [routerLink]="item.route"
+          routerLinkActive="bg-white/10 text-white"
+          [routerLinkActiveOptions]="{ exact: false }"
+          class="flex h-11 items-center gap-3 rounded-lg px-3 text-sm font-medium text-sidebar-muted transition hover:bg-white/5 hover:text-white"
+        >
+          <app-icon [name]="item.icon" svgClass="size-5" />
+          <span>{{ item.label }}</span>
+        </a>
+      }
+      <button
+        type="button"
+        class="flex h-11 items-center gap-3 rounded-lg px-3 text-sm font-medium text-sidebar-muted transition hover:bg-white/5 hover:text-white text-left"
+      >
+        <app-icon name="settings" svgClass="size-5" />
+        <span>Settings</span>
+      </button>
+    </nav>
+
+    <!-- Footer user card -->
+    <div class="mt-auto rounded-xl border border-white/10 bg-white/5 p-4">
+      <div class="flex items-center gap-3">
+        <div class="grid size-9 shrink-0 place-items-center rounded-full bg-accent font-semibold text-white text-xs">
+          {{ userInitials() }}
+        </div>
+        <div class="min-w-0 flex-1">
+          <div class="truncate text-sm font-semibold text-white">{{ userName() }}</div>
+          <div class="truncate text-xs text-sidebar-muted">{{ userRole() }}</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main layout area -->
+  <div class="min-h-screen lg:pl-sidebar flex flex-col">
+    <!-- Header -->
+    <header class="sticky top-0 z-20 flex min-h-header items-center justify-between border-b border-border bg-canvas/90 px-5 backdrop-blur md:px-8">
+      <div class="flex items-center gap-3">
+        <button
+          type="button"
+          aria-label="Open navigation"
+          (click)="toggleMenu()"
+          class="grid size-10 place-items-center rounded-lg text-muted transition hover:bg-subtle hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent lg:hidden"
+        >
+          <app-icon name="menu" svgClass="size-5" />
+        </button>
+        <div>
+          <h1 class="text-xl font-bold tracking-tight text-ink md:text-2xl leading-tight">
+            {{ currentTitle() }}
+          </h1>
+          <p class="hidden text-sm text-muted sm:block">
+            {{ currentSubtitle() }}
+          </p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-1 md:gap-2">
+        <button
+          type="button"
+          aria-label="Help"
+          title="Ayuda"
+          class="grid size-10 place-items-center rounded-lg text-muted transition hover:bg-subtle hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+        >
+          <app-icon name="help" svgClass="size-5" />
+        </button>
+
+        <button
+          type="button"
+          aria-label="Toggle dark mode"
+          [title]="isDarkMode() ? 'Modo claro' : 'Modo oscuro'"
+          (click)="toggleDarkMode()"
+          class="grid size-10 place-items-center rounded-lg text-muted transition hover:bg-subtle hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+        >
+          <app-icon [name]="isDarkMode() ? 'sun' : 'moon'" svgClass="size-5" />
+        </button>
+
+        <div class="mx-2 hidden h-7 w-px bg-border sm:block"></div>
+
+        <!-- User profile button & dropdown -->
+        <div class="relative">
+          <button
+            type="button"
+            (click)="toggleUserMenu()"
+            class="flex items-center gap-2 rounded-lg p-1.5 hover:bg-subtle transition"
+          >
+            <div class="grid size-8 place-items-center rounded-full bg-brand text-xs font-bold text-white">
+              {{ userInitials() }}
+            </div>
+            <span class="hidden text-sm font-semibold text-ink md:block">
+              {{ userName() }}
+            </span>
+            <app-icon name="chevron" svgClass="hidden size-4 rotate-90 text-faint md:block" />
+          </button>
+
+          @if (userMenuOpen()) {
+            <div class="absolute right-0 mt-2 w-48 rounded-xl border border-border bg-surface p-1 shadow-lg z-30">
+              <div class="px-3 py-2 border-b border-border">
+                <p class="text-xs font-semibold text-ink">{{ userName() }}</p>
+                <p class="text-xs text-muted truncate">{{ currentUser()?.email || userRole() }}</p>
+              </div>
+              <button
+                type="button"
+                (click)="logout()"
+                class="w-full flex items-center gap-2 px-3 py-2 text-xs font-semibold text-danger rounded-lg hover:bg-danger-soft transition text-left"
+              >
+                <app-icon name="trash" svgClass="size-4" />
+                <span>Cerrar sesión</span>
+              </button>
+            </div>
+          }
+        </div>
+      </div>
+    </header>
+
+    <!-- Main router content -->
+    <main class="flex-1 bg-canvas">
+      <router-outlet></router-outlet>
+    </main>
+  </div>
+</div>
