@@ -5,6 +5,7 @@ import com.tienda.backend.application.dto.response.PageResponse;
 import com.tienda.backend.application.dto.response.ProductoResponse;
 import com.tienda.backend.application.dto.response.ProductoStatsResponse;
 import com.tienda.backend.application.mapper.ProductoDtoMapper;
+import com.tienda.backend.application.service.FileStorageService;
 import com.tienda.backend.application.service.ProductoService;
 import com.tienda.backend.domain.exception.RecursoNoEncontrado;
 import com.tienda.backend.domain.model.Categoria;
@@ -17,6 +18,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 @Service
 @Transactional
@@ -25,17 +27,20 @@ public class ProductoServiceImpl implements ProductoService {
     private final ProductoRepository productoRepository;
     private final CategoriaRepository categoriaRepository;
     private final ProductoDtoMapper mapper;
+    private final FileStorageService fileStorageService;
 
     public ProductoServiceImpl(ProductoRepository productoRepository,
                                CategoriaRepository categoriaRepository,
-                               ProductoDtoMapper mapper) {
+                               ProductoDtoMapper mapper,
+                               FileStorageService fileStorageService) {
         this.productoRepository = productoRepository;
         this.categoriaRepository = categoriaRepository;
         this.mapper = mapper;
+        this.fileStorageService = fileStorageService;
     }
 
     @Override
-    public ProductoResponse crear(ProductoRequest request) {
+    public ProductoResponse crear(ProductoRequest request, MultipartFile imagen) {
         Categoria categoria = obtenerCategoriaOError(request.categoriaId());
 
         if (productoRepository.existePorCodigoBarras(request.codigoBarras())) {
@@ -43,7 +48,20 @@ public class ProductoServiceImpl implements ProductoService {
                     "Ya existe un producto con el código de barras '" + request.codigoBarras() + "'.");
         }
 
-        Producto producto = mapper.toDomain(request, categoria);
+        String rutaImagen = request.imagen();
+        if (imagen != null && !imagen.isEmpty()) {
+            rutaImagen = fileStorageService.almacenar(imagen, "productos");
+        }
+
+        Producto producto = new Producto(
+                null,
+                request.codigoBarras(),
+                request.nombre(),
+                request.descripcion(),
+                rutaImagen,
+                categoria,
+                true
+        );
         Producto guardado = productoRepository.guardar(producto);
 
         return mapper.toResponse(guardado);
@@ -86,7 +104,7 @@ public class ProductoServiceImpl implements ProductoService {
     }
 
     @Override
-    public ProductoResponse actualizar(Long id, ProductoRequest request) {
+    public ProductoResponse actualizar(Long id, ProductoRequest request, MultipartFile imagen) {
         Producto producto = productoRepository.buscarPorId(id)
                 .orElseThrow(() -> new RecursoNoEncontrado("No se encontró el producto con ID " + id + "."));
 
@@ -97,11 +115,21 @@ public class ProductoServiceImpl implements ProductoService {
                     "Ya existe otro producto con el código de barras '" + request.codigoBarras() + "'.");
         }
 
+        String rutaImagen = producto.getImagen();
+        if (imagen != null && !imagen.isEmpty()) {
+            if (rutaImagen != null && !rutaImagen.isBlank()) {
+                fileStorageService.eliminar(rutaImagen);
+            }
+            rutaImagen = fileStorageService.almacenar(imagen, "productos");
+        } else if (request.imagen() != null) {
+            rutaImagen = request.imagen();
+        }
+
         producto.actualizar(
                 request.codigoBarras(),
                 request.nombre(),
                 request.descripcion(),
-                request.imagen(),
+                rutaImagen,
                 categoria);
 
         Producto actualizado = productoRepository.guardar(producto);
@@ -120,8 +148,11 @@ public class ProductoServiceImpl implements ProductoService {
 
     @Override
     public void eliminar(Long id) {
-        if (productoRepository.buscarPorId(id).isEmpty()) {
-            throw new RecursoNoEncontrado("No se puede eliminar: no existe un producto con ID " + id + ".");
+        Producto producto = productoRepository.buscarPorId(id)
+                .orElseThrow(() -> new RecursoNoEncontrado("No se puede eliminar: no existe un producto con ID " + id + "."));
+
+        if (producto.getImagen() != null && !producto.getImagen().isBlank()) {
+            fileStorageService.eliminar(producto.getImagen());
         }
 
         productoRepository.eliminar(id);

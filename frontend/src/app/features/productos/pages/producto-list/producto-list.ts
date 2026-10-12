@@ -8,6 +8,7 @@ import { Categoria } from '../../../categoria/categoria.model';
 import { IconComponent } from '../../../../shared/components/icon/icon.component';
 import { ErrorHandlerService } from '../../../../core/services/error-handler.service';
 import { ToastService } from '../../../../core/services/toast.service';
+import { environment } from '../../../../../environments/environment.development';
 
 type ModalMode = 'create' | 'edit' | 'view' | 'delete' | null;
 
@@ -50,7 +51,8 @@ export class ProductoList implements OnInit {
   formDescripcion = '';
   formCategoriaId: number | null = null;
   formEstado = true;
-  formImagen = '';
+  formImagen = signal<string>('');
+  formImagenFile: File | null = null;
 
   // Errores de validación por campo
   erroresCampos = signal<Record<string, string>>({});
@@ -114,7 +116,8 @@ export class ProductoList implements OnInit {
     this.formDescripcion = '';
     this.formCategoriaId = this.categorias().length > 0 ? this.categorias()[0].id : null;
     this.formEstado = true;
-    this.formImagen = '';
+    this.formImagen.set('');
+    this.formImagenFile = null;
     this.erroresCampos.set({});
     this.modalMode.set('create');
   }
@@ -126,7 +129,8 @@ export class ProductoList implements OnInit {
     this.formDescripcion = p.descripcion || '';
     this.formCategoriaId = p.categoriaId;
     this.formEstado = p.estado;
-    this.formImagen = p.imagen || '';
+    this.formImagen.set(p.imagen || '');
+    this.formImagenFile = null;
     this.erroresCampos.set({});
     this.modalMode.set('edit');
   }
@@ -148,18 +152,46 @@ export class ProductoList implements OnInit {
 
   onImagenSeleccionada(event: Event): void {
     const input = event.target as HTMLInputElement;
-    if (input.files && input.files[0]) {
-      const file = input.files[0];
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        this.formImagen = e.target?.result as string;
-      };
-      reader.readAsDataURL(file);
+    if (input.files && input.files.length > 0) {
+      this.procesarArchivoImagen(input.files[0]);
+      input.value = '';
     }
   }
 
+  onFileDropped(event: DragEvent): void {
+    event.preventDefault();
+    if (event.dataTransfer?.files && event.dataTransfer.files.length > 0) {
+      this.procesarArchivoImagen(event.dataTransfer.files[0]);
+    }
+  }
+
+  private procesarArchivoImagen(file: File): void {
+    this.formImagenFile = file;
+    this.formImagen.set(URL.createObjectURL(file));
+  }
+
   removerImagen(): void {
-    this.formImagen = '';
+    this.formImagen.set('');
+    this.formImagenFile = null;
+  }
+
+  resolverImagen(ruta?: string | null): string {
+    if (!ruta) return '';
+    const r = ruta.trim();
+    if (!r) return '';
+    if (
+      r.startsWith('http://') ||
+      r.startsWith('https://') ||
+      r.startsWith('data:') ||
+      r.startsWith('blob:')
+    ) {
+      return r;
+    }
+    if (r.startsWith('/uploads/') || r.startsWith('uploads/')) {
+      const baseUrl = environment.apiUrl.replace(/\/api\/v1\/?$/, '');
+      return `${baseUrl}${r.startsWith('/') ? '' : '/'}${r}`;
+    }
+    return '';
   }
 
   cambiandoEstadoId = signal<number | null>(null);
@@ -212,11 +244,15 @@ export class ProductoList implements OnInit {
       return;
     }
 
+    const imagenDto = this.formImagenFile
+      ? undefined
+      : (this.formImagen() ? this.formImagen() : '');
+
     const payload: ProductoRequest = {
       codigoBarras: this.formCodigoBarras.trim(),
       nombre: this.formNombre.trim(),
       descripcion: this.formDescripcion.trim() || undefined,
-      imagen: this.formImagen || undefined,
+      imagen: imagenDto,
       categoriaId: Number(this.formCategoriaId),
     };
 
@@ -224,7 +260,7 @@ export class ProductoList implements OnInit {
     const seleccionado = this.productoSeleccionado();
 
     if (this.modalMode() === 'edit' && seleccionado) {
-      this.productoService.actualizar(seleccionado.id, payload).subscribe({
+      this.productoService.actualizar(seleccionado.id, payload, this.formImagenFile).subscribe({
         next: (actualizado) => {
           if (seleccionado.estado !== this.formEstado) {
             this.productoService.cambiarEstado(actualizado.id, this.formEstado).subscribe({
@@ -251,7 +287,7 @@ export class ProductoList implements OnInit {
         },
       });
     } else {
-      this.productoService.crear(payload).subscribe({
+      this.productoService.crear(payload, this.formImagenFile).subscribe({
         next: (creado) => {
           if (!this.formEstado) {
             this.productoService.cambiarEstado(creado.id, false).subscribe({

@@ -7,8 +7,10 @@ import com.tienda.backend.application.dto.response.ProductoStatsResponse;
 import com.tienda.backend.application.service.ProductoService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("api/v1/productos")
@@ -20,9 +22,12 @@ public class ProductoController {
         this.productoService = productoService;
     }
 
-    @PostMapping
-    public ResponseEntity<ProductoResponse> crear(@Valid @RequestBody ProductoRequest request) {
-        ProductoResponse response = productoService.crear(request);
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ProductoResponse> crear(
+            @Valid @RequestPart("producto") ProductoRequest request,
+            @RequestPart(value = "imagen", required = false) MultipartFile imagen
+    ) {
+        ProductoResponse response = productoService.crear(request, imagen);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
@@ -47,12 +52,13 @@ public class ProductoController {
         return ResponseEntity.ok(productoService.listar(page, size, busqueda, categoriaId, estado));
     }
 
-    @PutMapping("/{id}")
+    @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ProductoResponse> actualizar(
             @PathVariable Long id,
-            @Valid @RequestBody ProductoRequest request
+            @Valid @RequestPart("producto") ProductoRequest request,
+            @RequestPart(value = "imagen", required = false) MultipartFile imagen
     ) {
-        return ResponseEntity.ok(productoService.actualizar(id, request));
+        return ResponseEntity.ok(productoService.actualizar(id, request, imagen));
     }
 
     @PatchMapping("/{id}/estado")

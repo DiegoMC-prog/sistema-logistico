@@ -15,7 +15,7 @@ export class ProductoService {
   listar(
     page = 0,
     size = 10,
-    nombre = '',
+    busqueda = '',
     categoriaId?: number | null,
     estado?: boolean | null
   ): Observable<PageResponse<ProductoResponse>> {
@@ -23,8 +23,8 @@ export class ProductoService {
       .set('page', page.toString())
       .set('size', size.toString());
 
-    if (nombre && nombre.trim()) {
-      params = params.set('nombre', nombre.trim());
+    if (busqueda && busqueda.trim()) {
+      params = params.set('busqueda', busqueda.trim());
     }
     if (categoriaId != null) {
       params = params.set('categoriaId', categoriaId.toString());
@@ -44,12 +44,32 @@ export class ProductoService {
     return this.http.get<ProductoResponse>(`${this.apiUrl}/${id}`);
   }
 
-  crear(request: ProductoRequest): Observable<ProductoResponse> {
-    return this.http.post<ProductoResponse>(this.apiUrl, request);
+  crear(request: ProductoRequest, imagenFile?: File | null): Observable<ProductoResponse> {
+    const formData = new FormData();
+    const productoBlob = new Blob([JSON.stringify(request)], {
+      type: 'application/json',
+    });
+    formData.append('producto', productoBlob);
+
+    if (imagenFile) {
+      formData.append('imagen', imagenFile, imagenFile.name);
+    }
+
+    return this.http.post<ProductoResponse>(this.apiUrl, formData);
   }
 
-  actualizar(id: number, request: ProductoRequest): Observable<ProductoResponse> {
-    return this.http.put<ProductoResponse>(`${this.apiUrl}/${id}`, request);
+  actualizar(id: number, request: ProductoRequest, imagenFile?: File | null): Observable<ProductoResponse> {
+    const formData = new FormData();
+    const productoBlob = new Blob([JSON.stringify(request)], {
+      type: 'application/json',
+    });
+    formData.append('producto', productoBlob);
+
+    if (imagenFile) {
+      formData.append('imagen', imagenFile, imagenFile.name);
+    }
+
+    return this.http.put<ProductoResponse>(`${this.apiUrl}/${id}`, formData);
   }
 
   cambiarEstado(id: number, estado: boolean): Observable<ProductoResponse> {

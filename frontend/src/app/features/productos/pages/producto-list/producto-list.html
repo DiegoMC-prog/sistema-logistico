@@ -192,7 +192,7 @@
                 <td class="min-w-product px-5 py-4">
                   <div class="flex items-center gap-3">
                     @if (prod.imagen) {
-                      <img [src]="prod.imagen" alt="Foto producto" class="size-11 shrink-0 rounded-lg object-cover border border-border" />
+                      <img [src]="resolverImagen(prod.imagen)" alt="Foto producto" class="size-11 shrink-0 rounded-lg object-cover border border-border" />
                     } @else {
                       <div class="grid size-11 shrink-0 place-items-center rounded-lg bg-info-soft text-info">
                         <app-icon name="box" svgClass="size-5" />
@@ -355,9 +355,9 @@
                 Imagen del producto <span class="font-normal text-muted">(opcional)</span>
               </span>
 
-              @if (formImagen) {
+              @if (formImagen()) {
                 <div class="relative flex min-h-upload flex-col items-center justify-center rounded-xl border-2 border-border bg-table-head p-4 overflow-hidden">
-                  <img [src]="formImagen" alt="Preview producto" class="max-h-48 rounded-lg object-contain" />
+                  <img [src]="resolverImagen(formImagen())" alt="Preview producto" class="max-h-48 rounded-lg object-contain" />
                   <button
                     type="button"
                     (click)="removerImagen()"
@@ -368,14 +368,28 @@
                   </button>
                 </div>
               } @else {
-                <label class="group flex min-h-upload cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-border bg-table-head px-6 text-center transition hover:border-accent hover:bg-accent-soft/30">
-                  <input accept="image/*" class="sr-only" type="file" (change)="onImagenSeleccionada($event)" />
-                  <div class="grid size-11 place-items-center rounded-full bg-surface text-muted shadow-sm transition group-hover:text-accent">
+                <input
+                  #fileInput
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp,image/gif"
+                  class="hidden"
+                  (change)="onImagenSeleccionada($event)"
+                />
+                <div
+                  role="button"
+                  tabindex="0"
+                  (click)="fileInput.click()"
+                  (keydown.enter)="fileInput.click()"
+                  (dragover)="$event.preventDefault()"
+                  (drop)="onFileDropped($event)"
+                  class="group flex min-h-upload cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-border bg-table-head px-6 text-center transition hover:border-accent hover:bg-accent-soft/30 focus:outline-none focus:ring-2 focus:ring-accent"
+                >
+                  <div class="pointer-events-none grid size-11 place-items-center rounded-full bg-surface text-muted shadow-sm transition group-hover:text-accent">
                     <app-icon name="upload" svgClass="size-5" />
                   </div>
-                  <span class="mt-3 text-sm font-semibold text-ink">Subir imagen</span>
-                  <span class="mt-1 text-xs text-muted">PNG, JPG o WEBP · Máximo 5 MB</span>
-                </label>
+                  <span class="pointer-events-none mt-3 text-sm font-semibold text-ink">Subir imagen</span>
+                  <span class="pointer-events-none mt-1 text-xs text-muted">PNG, JPG o WEBP · Máximo 5 MB</span>
+                </div>
               }
             </div>
 
@@ -512,7 +526,7 @@
         <!-- Header de imagen -->
         <div class="grid h-detail place-items-center bg-subtle border-b border-border overflow-hidden">
           @if (prod.imagen) {
-            <img [src]="prod.imagen" alt="Foto detalle" class="h-full w-full object-contain p-4" />
+            <img [src]="resolverImagen(prod.imagen)" alt="Foto detalle" class="h-full w-full object-contain p-4" />
           } @else {
             <app-icon name="box" svgClass="size-16 text-muted" />
           }
