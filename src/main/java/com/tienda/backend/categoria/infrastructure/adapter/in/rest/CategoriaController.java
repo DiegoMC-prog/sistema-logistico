@@ -4,16 +4,16 @@ import com.tienda.backend.categoria.application.port.in.CrearCategoriaUseCase;
 import com.tienda.backend.categoria.application.port.in.EditarCategoriaUseCase;
 import com.tienda.backend.categoria.application.port.in.EliminarCategoriaUseCase;
 import com.tienda.backend.categoria.application.port.in.ListarCategoriaUseCase;
+import com.tienda.backend.categoria.application.model.CategoriaFiltro;
 import com.tienda.backend.categoria.domain.model.Categoria;
 import com.tienda.backend.categoria.infrastructure.adapter.in.rest.dto.CategoriaRequest;
 import com.tienda.backend.categoria.infrastructure.adapter.in.rest.dto.CategoriaResponse;
+import com.tienda.backend.shared.application.model.PageResult;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/categorias")
@@ -34,10 +34,12 @@ public class CategoriaController {
     }
 
     @GetMapping
-    public ResponseEntity<List<CategoriaResponse>> listarCategorias(){
-        List<CategoriaResponse> categorias = listarCategoriaUseCase.listar().stream()
-                .map(cat -> new CategoriaResponse(cat.getId(), cat.getNombre()))
-                .toList();
+    public ResponseEntity<PageResult<CategoriaResponse>> listarCategorias(
+            @RequestParam(required = false) String search,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size){
+        PageResult<CategoriaResponse> categorias = listarCategoriaUseCase.listar(new CategoriaFiltro(search), page, size)
+                .map(cat -> new CategoriaResponse(cat.getId(), cat.getNombre()));
 
         return ResponseEntity.ok(categorias);
     }

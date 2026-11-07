@@ -8,11 +8,12 @@ import com.tienda.backend.categoria.application.port.out.CategoriaRespositoryPor
 import com.tienda.backend.categoria.domain.exception.CategoriaNombreDuplicadoException;
 import com.tienda.backend.categoria.domain.exception.CategoriaNotFoundException;
 import com.tienda.backend.categoria.domain.model.Categoria;
+import com.tienda.backend.categoria.application.model.CategoriaFiltro;
+import com.tienda.backend.shared.application.model.PageResult;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -46,8 +47,8 @@ public class CategoriaService implements CrearCategoriaUseCase, EditarCategoriaU
 
     @Override
     @Transactional(readOnly = true)
-    public List<Categoria> listar() {
-        return categoriaRespositoryPort.findAll();
+    public PageResult<Categoria> listar(CategoriaFiltro filtro, int page, int size) {
+        return categoriaRespositoryPort.findAll(filtro, PageResult.safePage(page), PageResult.safeSize(size));
     }
 
     @Override
