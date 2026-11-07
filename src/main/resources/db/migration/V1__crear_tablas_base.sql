@@ -95,6 +95,7 @@ CREATE INDEX idx_productos_categoria_id ON productos(categoria_id);
 CREATE TABLE unidades_medida(
     id BIGSERIAL PRIMARY KEY,
     nombre VARCHAR(150) NOT NULL,
+    abreviatura VARCHAR(10) NOT NULL,
     created_by VARCHAR(150) NOT NULL,
     updated_by VARCHAR(150) NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -103,6 +104,7 @@ CREATE TABLE unidades_medida(
 );
 
 CREATE UNIQUE INDEX uk_unidades_medida_nombre ON unidades_medida(nombre) WHERE deleted_at IS NULL;
+CREATE UNIQUE INDEX uk_unidades_medida_abreviatura ON unidades_medida(abreviatura) WHERE deleted_at IS NULL;
 
 CREATE TABLE presentaciones_producto(
     id BIGSERIAL PRIMARY KEY,
@@ -110,11 +112,21 @@ CREATE TABLE presentaciones_producto(
     unidad_medida_id BIGINT NOT NULL REFERENCES unidades_medida(id),
     codigo_barras VARCHAR(64) NOT NULL,
     factor_conversion DECIMAL(12, 4) NOT NULL,
-    es_unidad_base BOOLEAN NOT NULL DEFAULT FALSE
+    es_unidad_base BOOLEAN NOT NULL DEFAULT FALSE,
+    created_by VARCHAR(150) NOT NULL,
+    updated_by VARCHAR(150) NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP DEFAULT NULL,
+
+    CONSTRAINT ck_presentaciones_factor CHECK (factor_conversion > 0),
+    -- La unidad base siempre equivale a 1 unidad base de si misma
+    CONSTRAINT ck_presentaciones_base_factor CHECK (NOT es_unidad_base OR factor_conversion = 1)
 );
 
-CREATE UNIQUE INDEX uk_presentaciones_codigo_barras ON presentaciones_producto(codigo_barras);
-CREATE UNIQUE INDEX uk_presentaciones_unidad_base ON presentaciones_producto(producto_id) WHERE es_unidad_base;
+CREATE UNIQUE INDEX uk_presentaciones_codigo_barras ON presentaciones_producto(codigo_barras) WHERE deleted_at IS NULL;
+CREATE UNIQUE INDEX uk_presentaciones_unidad_base ON presentaciones_producto(producto_id) WHERE es_unidad_base AND deleted_at IS NULL;
+CREATE INDEX idx_presentaciones_producto_id ON presentaciones_producto(producto_id);
 CREATE INDEX idx_presentaciones_unidad_medida_id ON presentaciones_producto(unidad_medida_id);
 
 CREATE TABLE lotes(
@@ -128,11 +140,17 @@ CREATE TABLE lotes(
     updated_by VARCHAR(150) NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    deleted_at TIMESTAMP DEFAULT NULL
+    deleted_at TIMESTAMP DEFAULT NULL,
+
+    CONSTRAINT ck_lotes_costo CHECK (costo_unitario_compra >= 0),
+    CONSTRAINT ck_lotes_descuento CHECK (porcentaje_descuento_vencimiento BETWEEN 0 AND 100)
 );
 
 CREATE UNIQUE INDEX uk_lotes_producto_numero_lote ON lotes(producto_id, numero_lote) WHERE deleted_at IS NULL;
 CREATE INDEX idx_lotes_fecha_vencimiento ON lotes(fecha_vencimiento);
+
+-- Numeracion automatica de lotes (LOT-yyyyMMdd-NNNNNN) cuando no se informa el numero
+CREATE SEQUENCE seq_numero_lote;
 
 CREATE TABLE depositos(
     id BIGSERIAL PRIMARY KEY,
