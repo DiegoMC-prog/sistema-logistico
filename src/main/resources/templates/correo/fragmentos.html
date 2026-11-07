@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<body>
+
+<!--/*
+    Piezas comunes de todos los correos. Variables globales (las pone EnviadorCorreoAdapter):
+    tienda (nombre) y colorPrincipal (config app.mail.*). Todo con estilos en línea y tablas
+    porque los clientes de correo no soportan bien hojas de estilo, flexbox ni grid.
+*/-->
+
+<!-- Cabecera: nombre de la tienda sobre el color principal -->
+<tr th:fragment="cabecera">
+    <td th:style="'background-color:' + ${colorPrincipal} + ';padding:24px 32px;'">
+        <span style="font-family:Arial,Helvetica,sans-serif;font-size:22px;font-weight:bold;color:#ffffff;"
+              th:text="${tienda}">Tienda</span>
+    </td>
+</tr>
+
+<!-- Pie: aviso de mensaje automático -->
+<tr th:fragment="pie">
+    <td style="padding:20px 32px;background-color:#f9fafb;border-top:1px solid #e5e7eb;">
+        <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.5;color:#6b7280;">
+            Este es un mensaje automático de <span th:text="${tienda}">Tienda</span>.
+            Si no esperaba este correo, comuníquese con el administrador.
+        </p>
+    </td>
+</tr>
+
+</body>
+</html>

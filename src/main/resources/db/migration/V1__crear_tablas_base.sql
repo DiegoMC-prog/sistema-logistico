@@ -5,6 +5,8 @@ CREATE TABLE usuarios(
     email VARCHAR(255) NOT NULL,
     password VARCHAR(255) NOT NULL,
     estado VARCHAR(50) NOT NULL,
+    -- true mientras la contrasena sea la temporal generada por el sistema (debe cambiarse al ingresar)
+    password_temporal BOOLEAN NOT NULL DEFAULT FALSE,
     created_by VARCHAR(150) NOT NULL,
     updated_by VARCHAR(150) NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -579,4 +581,26 @@ INSERT INTO permisos (nombre, descripcion, created_by, updated_by) VALUES
     ('VENTA_DEVOLVER', 'Registrar devoluciones de venta', 'SISTEMA', 'SISTEMA'),
     ('VENTA_VER', 'Consultar ventas y reportes', 'SISTEMA', 'SISTEMA'),
     ('CLIENTE_GESTIONAR', 'Gestionar clientes y tipos de cliente', 'SISTEMA', 'SISTEMA'),
-    ('PRECIO_GESTIONAR', 'Gestionar precios de venta', 'SISTEMA', 'SISTEMA');
+    ('PRECIO_GESTIONAR', 'Gestionar precios de venta', 'SISTEMA', 'SISTEMA'),
+    ('USUARIO_GESTIONAR', 'Gestionar usuarios y sus roles', 'SISTEMA', 'SISTEMA'),
+    ('ROL_GESTIONAR', 'Gestionar roles y sus permisos', 'SISTEMA', 'SISTEMA'),
+    ('CATALOGO_GESTIONAR', 'Gestionar categorias, productos, unidades de medida, presentaciones y lotes', 'SISTEMA', 'SISTEMA'),
+    ('DEPOSITO_GESTIONAR', 'Gestionar depositos', 'SISTEMA', 'SISTEMA'),
+    ('INVENTARIO_VER', 'Consultar inventario y movimientos', 'SISTEMA', 'SISTEMA'),
+    ('INVENTARIO_MOVER', 'Registrar entradas, salidas, traslados y ajustes de inventario', 'SISTEMA', 'SISTEMA'),
+    ('PROVEEDOR_GESTIONAR', 'Gestionar proveedores', 'SISTEMA', 'SISTEMA'),
+    ('PEDIDO_GESTIONAR', 'Gestionar pedidos a proveedores y sus recepciones', 'SISTEMA', 'SISTEMA');
+
+-- Rol de sistema ADMIN con todos los permisos
+INSERT INTO roles (nombre, created_by, updated_by) VALUES ('ADMIN', 'SISTEMA', 'SISTEMA');
+
+INSERT INTO rol_permiso (rol_id, permiso_id)
+SELECT r.id, p.id FROM roles r CROSS JOIN permisos p WHERE r.nombre = 'ADMIN';
+
+-- Usuario administrador inicial (contrasena inicial: Admin#2026, marcada como temporal: debe cambiarse al ingresar;
+-- mientras tanto se puede generar una nueva por correo con POST /api/v1/usuarios/{id}/restablecer-password)
+INSERT INTO usuarios (username, nombre, email, password, password_temporal, estado, created_by, updated_by) VALUES
+    ('admin', 'Administrador', 'admin@tienda.local', '$2a$10$T8UudTC9A/EMPgdnXHRO9eJLeTFuC9hrdqaRGLymJGUCdb.1B8fJ6', TRUE, 'ACTIVO', 'SISTEMA', 'SISTEMA');
+
+INSERT INTO usuario_rol (usuario_id, rol_id, assigned_by)
+SELECT u.id, r.id, 'SISTEMA' FROM usuarios u CROSS JOIN roles r WHERE u.username = 'admin' AND r.nombre = 'ADMIN';

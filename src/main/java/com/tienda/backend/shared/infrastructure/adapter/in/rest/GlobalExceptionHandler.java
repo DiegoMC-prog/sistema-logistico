@@ -3,6 +3,7 @@ package com.tienda.backend.shared.infrastructure.adapter.in.rest;
 import com.tienda.backend.shared.domain.exception.BusinessConflictException;
 import com.tienda.backend.shared.domain.exception.InvalidBusinessRuleException;
 import com.tienda.backend.shared.domain.exception.ResourceNotFoundException;
+import com.tienda.backend.shared.domain.exception.ServicioExternoException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
@@ -32,6 +33,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(InvalidBusinessRuleException.class)
     public ProblemDetail handleInvalidRule(InvalidBusinessRuleException ex) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
+    }
+
+    @ExceptionHandler(ServicioExternoException.class)
+    public ProblemDetail handleServicioExterno(ServicioExternoException ex) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_GATEWAY, ex.getMessage());
     }
 
     // Red de seguridad ante concurrencia: dos peticiones pasan la validación previa
