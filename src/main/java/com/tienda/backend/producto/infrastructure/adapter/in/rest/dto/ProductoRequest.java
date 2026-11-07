@@ -1,5 +1,6 @@
 package com.tienda.backend.producto.infrastructure.adapter.in.rest.dto;
 
+import com.tienda.backend.producto.domain.model.Producto;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
@@ -24,4 +25,7 @@ public record ProductoRequest(
         @NotNull(message = "Debe indicar si el producto es perecedero")
         Boolean esPerecedero
 ) {
+    public Producto toDomain() {
+        return new Producto(nombre, descripcion, categoriaId, stockMinimo, esPerecedero);
+    }
 }

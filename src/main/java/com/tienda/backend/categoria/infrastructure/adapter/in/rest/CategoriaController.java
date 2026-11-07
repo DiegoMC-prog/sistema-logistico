@@ -27,8 +27,7 @@ public class CategoriaController {
 
     @PostMapping
     public ResponseEntity<CategoriaResponse> crearCategoria(@Valid @RequestBody CategoriaRequest request){
-        Categoria categoria = new Categoria(request.nombre());
-        Categoria guardada =  crearCategoriaUseCase.create(categoria);
+        Categoria guardada = crearCategoriaUseCase.create(request.toDomain());
 
         return ResponseEntity.status(HttpStatus.CREATED).body(new CategoriaResponse(guardada.getId(), guardada.getNombre()));
     }
@@ -46,7 +45,7 @@ public class CategoriaController {
 
     @PutMapping("/{id}")
     public ResponseEntity<CategoriaResponse> editarCategoria(@PathVariable Long id, @Valid @RequestBody CategoriaRequest request){
-        Categoria categoria = editarCategoriaUseCase.editar(id, new Categoria(request.nombre()));
+        Categoria categoria = editarCategoriaUseCase.editar(id, request.toDomain());
         return ResponseEntity.ok(new CategoriaResponse(categoria.getId(), categoria.getNombre()));
     }
 

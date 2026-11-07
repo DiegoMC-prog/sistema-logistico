@@ -9,7 +9,6 @@ import com.tienda.backend.producto.application.port.in.ObtenerProductoUseCase;
 import com.tienda.backend.producto.application.model.ProductoDetalle;
 import com.tienda.backend.producto.application.model.ProductoFiltro;
 import com.tienda.backend.producto.domain.model.EstadoProducto;
-import com.tienda.backend.producto.domain.model.Producto;
 import com.tienda.backend.producto.infrastructure.adapter.in.rest.dto.ProductoRequest;
 import com.tienda.backend.producto.infrastructure.adapter.in.rest.dto.ProductoResponse;
 import com.tienda.backend.shared.application.model.PageResult;
@@ -33,7 +32,7 @@ public class ProductoController {
 
     @PostMapping
     public ResponseEntity<ProductoResponse> crear(@Valid @RequestBody ProductoRequest request) {
-        ProductoDetalle guardado = crearProductoUseCase.create(toDomain(request));
+        ProductoDetalle guardado = crearProductoUseCase.create(request.toDomain());
         return ResponseEntity.status(HttpStatus.CREATED).body(ProductoResponse.from(guardado));
     }
 
@@ -56,7 +55,7 @@ public class ProductoController {
 
     @PutMapping("/{id}")
     public ResponseEntity<ProductoResponse> editar(@PathVariable Long id, @Valid @RequestBody ProductoRequest request) {
-        return ResponseEntity.ok(ProductoResponse.from(editarProductoUseCase.editar(id, toDomain(request))));
+        return ResponseEntity.ok(ProductoResponse.from(editarProductoUseCase.editar(id, request.toDomain())));
     }
 
     @PatchMapping("/{id}/activar")
@@ -73,9 +72,5 @@ public class ProductoController {
     public ResponseEntity<Void> eliminar(@PathVariable Long id) {
         eliminarProductoUseCase.eliminar(id);
         return ResponseEntity.noContent().build();
-    }
-
-    private Producto toDomain(ProductoRequest r) {
-        return new Producto(r.nombre(), r.descripcion(), r.categoriaId(), r.stockMinimo(), r.esPerecedero());
     }
 }

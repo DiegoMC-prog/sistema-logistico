@@ -138,13 +138,15 @@ CREATE TABLE depositos(
     id BIGSERIAL PRIMARY KEY,
     nombre VARCHAR(150) NOT NULL,
     descripcion TEXT,
-    estado VARCHAR(50),
+    estado VARCHAR(50) NOT NULL DEFAULT 'ACTIVO',
     created_by VARCHAR(150) NOT NULL,
     updated_by VARCHAR(150) NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     deleted_at TIMESTAMP DEFAULT NULL
 );
+
+CREATE UNIQUE INDEX uk_depositos_nombre_activo ON depositos (nombre) WHERE deleted_at IS NULL;
 
 CREATE TABLE inventarios(
     id BIGSERIAL PRIMARY KEY,
