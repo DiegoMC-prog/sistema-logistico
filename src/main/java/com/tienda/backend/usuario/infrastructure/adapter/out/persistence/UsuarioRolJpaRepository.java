@@ -13,6 +13,11 @@ public interface UsuarioRolJpaRepository extends JpaRepository<UsuarioRolEntity,
 
     List<UsuarioRolEntity> findByUsuarioIdIn(Collection<Long> usuarioIds);
 
+    /** Ids de los usuarios (no eliminados) que tienen el rol. */
+    @Query("select ur.usuarioId from UsuarioRolEntity ur, UsuarioEntity u "
+            + "where ur.rolId = :rolId and ur.usuarioId = u.id")
+    List<Long> usuarioIdsConRol(@Param("rolId") Long rolId);
+
     /** Cuenta asignaciones del rol a usuarios no eliminados (el borrado lógico filtra a los eliminados). */
     @Query("select count(ur) from UsuarioRolEntity ur, UsuarioEntity u "
             + "where ur.rolId = :rolId and ur.usuarioId = u.id")

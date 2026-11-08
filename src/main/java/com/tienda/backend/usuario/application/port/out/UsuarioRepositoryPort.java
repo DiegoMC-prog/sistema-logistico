@@ -5,6 +5,7 @@ import com.tienda.backend.usuario.application.model.UsuarioFiltro;
 import com.tienda.backend.usuario.domain.model.Usuario;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -12,6 +13,8 @@ import java.util.Set;
 public interface UsuarioRepositoryPort {
     Usuario save(Usuario usuario);
     Optional<Usuario> findById(Long id);
+    Optional<Usuario> findByUsername(String username);
+    List<Long> findUsuarioIdsByRolId(Long rolId);
     PageResult<Usuario> findAll(UsuarioFiltro filtro, int page, int size);
     void deleteById(Long id);
     boolean existsByUsername(String username);

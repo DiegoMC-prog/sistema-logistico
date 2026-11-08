@@ -41,6 +41,22 @@ CREATE TABLE usuario_rol(
 
 CREATE INDEX idx_usuario_rol_rol_id ON usuario_rol(rol_id);
 
+-- Sesiones de inicio de sesion (una por dispositivo). Solo se guarda el hash SHA-256 del refresh token.
+CREATE TABLE sesiones(
+    id BIGSERIAL PRIMARY KEY,
+    usuario_id BIGINT NOT NULL REFERENCES usuarios(id),
+    refresh_token_hash VARCHAR(64) NOT NULL,
+    expira_at TIMESTAMP NOT NULL,
+    revocada_at TIMESTAMP DEFAULT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    last_used_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    ip VARCHAR(45),
+    user_agent VARCHAR(255)
+);
+
+CREATE UNIQUE INDEX uk_sesiones_refresh_token_hash ON sesiones(refresh_token_hash);
+CREATE INDEX idx_sesiones_usuario_id ON sesiones(usuario_id);
+
 CREATE TABLE permisos(
     id BIGSERIAL PRIMARY KEY,
     nombre VARCHAR(150) NOT NULL,

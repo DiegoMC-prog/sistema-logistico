@@ -50,6 +50,12 @@ public class Usuario {
         setEmail(email);
     }
 
+    /** El propio usuario eligió su contraseña: deja de ser temporal. */
+    public void cambiarPassword(String nuevoPasswordHash) {
+        setPasswordHash(nuevoPasswordHash);
+        this.passwordTemporal = false;
+    }
+
     /** Reemplaza la contraseña por una temporal generada por el sistema. */
     public void asignarPasswordTemporal(String passwordHashTemporal) {
         setPasswordHash(passwordHashTemporal);

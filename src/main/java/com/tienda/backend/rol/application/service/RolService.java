@@ -18,8 +18,10 @@ import com.tienda.backend.rol.domain.exception.RolEnUsoException;
 import com.tienda.backend.rol.domain.exception.RolNombreDuplicadoException;
 import com.tienda.backend.rol.domain.exception.RolNotFoundException;
 import com.tienda.backend.rol.domain.model.Rol;
+import com.tienda.backend.shared.application.event.AccesoDeRolModificado;
 import com.tienda.backend.shared.application.model.PageResult;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,6 +37,7 @@ public class RolService implements CrearRolUseCase, EditarRolUseCase, ListarRolU
     private final RolRepositoryPort rolRepositoryPort;
     private final PermisoConsultaPort permisoConsultaPort;
     private final UsuarioConsultaPort usuarioConsultaPort;
+    private final ApplicationEventPublisher eventos;
 
     @Override
     @Transactional
@@ -57,7 +60,10 @@ public class RolService implements CrearRolUseCase, EditarRolUseCase, ListarRolU
         }
 
         existente.editarNombre(datos.getNombre());
-        return rolRepositoryPort.save(existente);
+        Rol guardado = rolRepositoryPort.save(existente);
+        // El nombre del rol viaja dentro del token de sus usuarios.
+        eventos.publishEvent(new AccesoDeRolModificado(id));
+        return guardado;
     }
 
     @Override
@@ -105,6 +111,8 @@ public class RolService implements CrearRolUseCase, EditarRolUseCase, ListarRolU
         }
 
         rolRepositoryPort.reemplazarPermisos(rolId, solicitados);
+        // Los permisos viajan dentro del token: los tokens de todos los usuarios del rol dejan de ser válidos.
+        eventos.publishEvent(new AccesoDeRolModificado(rolId));
         return new RolDetalle(rol, permisos);
     }
 

@@ -1,5 +1,6 @@
 package com.tienda.backend.shared.infrastructure.adapter.in.rest;
 
+import com.tienda.backend.shared.domain.exception.AutenticacionException;
 import com.tienda.backend.shared.domain.exception.BusinessConflictException;
 import com.tienda.backend.shared.domain.exception.InvalidBusinessRuleException;
 import com.tienda.backend.shared.domain.exception.ResourceNotFoundException;
@@ -33,6 +34,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(InvalidBusinessRuleException.class)
     public ProblemDetail handleInvalidRule(InvalidBusinessRuleException ex) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
+    }
+
+    @ExceptionHandler(AutenticacionException.class)
+    public ProblemDetail handleAutenticacion(AutenticacionException ex) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, ex.getMessage());
     }
 
     @ExceptionHandler(ServicioExternoException.class)

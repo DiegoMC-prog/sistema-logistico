@@ -37,6 +37,16 @@ public class UsuarioRepositoryAdapter implements UsuarioRepositoryPort {
     }
 
     @Override
+    public Optional<Usuario> findByUsername(String username) {
+        return usuarioJpaRepository.findByUsername(username).map(mapper::toDomain);
+    }
+
+    @Override
+    public List<Long> findUsuarioIdsByRolId(Long rolId) {
+        return usuarioRolJpaRepository.usuarioIdsConRol(rolId);
+    }
+
+    @Override
     public PageResult<Usuario> findAll(UsuarioFiltro filtro, int page, int size) {
         Page<UsuarioEntity> result = usuarioJpaRepository.findAll(
                 UsuarioSpecifications.desde(filtro), PageRequest.of(page, size, Sort.by("id")));

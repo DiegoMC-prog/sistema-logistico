@@ -2,7 +2,9 @@ package com.tienda.backend.usuario.application.service;
 
 import com.tienda.backend.rol.domain.exception.RolNotFoundException;
 import com.tienda.backend.rol.domain.model.Rol;
+import com.tienda.backend.shared.application.event.AccesoUsuarioModificado;
 import com.tienda.backend.shared.application.model.PageResult;
+import com.tienda.backend.shared.application.port.out.UsuarioActualPort;
 import com.tienda.backend.shared.application.port.out.EnviadorCorreoPort;
 import com.tienda.backend.usuario.application.mail.CorreoPasswordTemporal;
 import com.tienda.backend.usuario.application.model.CrearUsuarioComando;
@@ -27,6 +29,7 @@ import com.tienda.backend.usuario.domain.exception.UsuarioNotFoundException;
 import com.tienda.backend.usuario.domain.exception.UsuarioUsernameDuplicadoException;
 import com.tienda.backend.usuario.domain.model.Usuario;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -46,14 +49,13 @@ public class UsuarioService implements CrearUsuarioUseCase, EditarUsuarioUseCase
         ObtenerUsuarioUseCase, EliminarUsuarioUseCase, CambiarEstadoUsuarioUseCase,
         RestablecerPasswordUsuarioUseCase, AsignarRolesUsuarioUseCase {
 
-    /** Mientras no exista login no hay usuario autenticado que registrar. */
-    private static final String ASIGNADO_POR_SISTEMA = "SISTEMA";
-
     private final UsuarioRepositoryPort usuarioRepositoryPort;
     private final RolConsultaPort rolConsultaPort;
     private final PasswordHasherPort passwordHasherPort;
     private final PasswordGeneratorPort passwordGeneratorPort;
     private final EnviadorCorreoPort enviadorCorreoPort;
+    private final ApplicationEventPublisher eventos;
+    private final UsuarioActualPort usuarioActualPort;
 
     /**
      * La contraseña no la elige quien crea el usuario: se genera, se guarda hasheada y se envía por correo.
@@ -132,6 +134,7 @@ public class UsuarioService implements CrearUsuarioUseCase, EditarUsuarioUseCase
         Usuario usuario = buscar(id);
         protegerUltimoAdministrador(usuario);
         usuarioRepositoryPort.deleteById(id);
+        eventos.publishEvent(new AccesoUsuarioModificado(id));
     }
 
     @Override
@@ -148,7 +151,9 @@ public class UsuarioService implements CrearUsuarioUseCase, EditarUsuarioUseCase
         Usuario usuario = buscar(id);
         protegerUltimoAdministrador(usuario);
         usuario.desactivar();
-        return detalle(usuarioRepositoryPort.save(usuario));
+        UsuarioDetalle detalle = detalle(usuarioRepositoryPort.save(usuario));
+        eventos.publishEvent(new AccesoUsuarioModificado(id));
+        return detalle;
     }
 
     /** Si el correo falla, la transacción se revierte y la contraseña anterior sigue vigente. */
@@ -163,6 +168,9 @@ public class UsuarioService implements CrearUsuarioUseCase, EditarUsuarioUseCase
 
         enviadorCorreoPort.enviar(CorreoPasswordTemporal.crear(
                 usuario.getEmail(), usuario.getNombre(), usuario.getUsername(), passwordTemporal));
+
+        // La contraseña anterior deja de valer: se cierran las sesiones abiertas del usuario.
+        eventos.publishEvent(new AccesoUsuarioModificado(id));
     }
 
     @Override
@@ -184,7 +192,9 @@ public class UsuarioService implements CrearUsuarioUseCase, EditarUsuarioUseCase
             protegerUltimoAdministrador(usuario);
         }
 
-        usuarioRepositoryPort.reemplazarRoles(usuarioId, solicitados, ASIGNADO_POR_SISTEMA);
+        usuarioRepositoryPort.reemplazarRoles(usuarioId, solicitados, usuarioActualPort.nombre());
+        // Los roles y permisos viajan dentro del token: el token actual del usuario deja de ser válido.
+        eventos.publishEvent(new AccesoUsuarioModificado(usuarioId));
         return new UsuarioDetalle(usuario, roles.stream().sorted(Comparator.comparing(Rol::getId)).toList());
     }
 
