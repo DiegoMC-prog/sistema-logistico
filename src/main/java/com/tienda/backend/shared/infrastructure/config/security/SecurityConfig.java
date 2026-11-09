@@ -196,6 +196,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/v1/reportes/ventas/**").hasAuthority(REPORTE_VENTAS)
                         .requestMatchers(HttpMethod.GET, "/api/v1/reportes/inventario/**").hasAuthority(REPORTE_INVENTARIO)
                         .requestMatchers(HttpMethod.GET, "/api/v1/reportes/caja/**").hasAuthority(REPORTE_CAJA)
+                        .requestMatchers(HttpMethod.GET, "/api/v1/reportes/utilidad/**").hasAuthority(REPORTE_UTILIDAD)
 
                         // Inventario: consultar con INVENTARIO_VER; registrar movimientos con INVENTARIO_MOVER
                         .requestMatchers(HttpMethod.GET, "/api/v1/inventario/**")
