@@ -1,0 +1,58 @@
+package com.tienda.backend.categoria.infrastructure.adapter.in.rest;
+
+import com.tienda.backend.categoria.application.port.in.CrearCategoriaUseCase;
+import com.tienda.backend.categoria.application.port.in.EditarCategoriaUseCase;
+import com.tienda.backend.categoria.application.port.in.EliminarCategoriaUseCase;
+import com.tienda.backend.categoria.application.port.in.ListarCategoriaUseCase;
+import com.tienda.backend.categoria.application.model.CategoriaFiltro;
+import com.tienda.backend.categoria.domain.model.Categoria;
+import com.tienda.backend.categoria.infrastructure.adapter.in.rest.dto.CategoriaRequest;
+import com.tienda.backend.categoria.infrastructure.adapter.in.rest.dto.CategoriaResponse;
+import com.tienda.backend.shared.application.model.PageResult;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+@RequestMapping("/api/v1/categorias")
+@RequiredArgsConstructor
+public class CategoriaController {
+
+    private final CrearCategoriaUseCase crearCategoriaUseCase;
+    private final EditarCategoriaUseCase editarCategoriaUseCase;
+    private final ListarCategoriaUseCase listarCategoriaUseCase;
+    private final EliminarCategoriaUseCase eliminarCategoriaUseCase;
+
+    @PostMapping
+    public ResponseEntity<CategoriaResponse> crearCategoria(@Valid @RequestBody CategoriaRequest request){
+        Categoria guardada = crearCategoriaUseCase.create(request.toDomain());
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(new CategoriaResponse(guardada.getId(), guardada.getNombre()));
+    }
+
+    @GetMapping
+    public ResponseEntity<PageResult<CategoriaResponse>> listarCategorias(
+            @RequestParam(required = false) String search,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size){
+        PageResult<CategoriaResponse> categorias = listarCategoriaUseCase.listar(new CategoriaFiltro(search), page, size)
+                .map(cat -> new CategoriaResponse(cat.getId(), cat.getNombre()));
+
+        return ResponseEntity.ok(categorias);
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<CategoriaResponse> editarCategoria(@PathVariable Long id, @Valid @RequestBody CategoriaRequest request){
+        Categoria categoria = editarCategoriaUseCase.editar(id, request.toDomain());
+        return ResponseEntity.ok(new CategoriaResponse(categoria.getId(), categoria.getNombre()));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> eliminarCategoria(@PathVariable Long id){
+        eliminarCategoriaUseCase.eliminar(id);
+
+        return  ResponseEntity.noContent().build();
+    }
+}
