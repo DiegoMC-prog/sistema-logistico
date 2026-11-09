@@ -66,6 +66,13 @@ public final class Permisos {
     /** Ver y operar los turnos de otros usuarios. */
     public static final String CAJA_SUPERVISAR = "CAJA_SUPERVISAR";
 
+    // Proveedores
+    public static final String PROVEEDOR_VER = "PROVEEDOR_VER";
+    public static final String PROVEEDOR_CREAR = "PROVEEDOR_CREAR";
+    public static final String PROVEEDOR_EDITAR = "PROVEEDOR_EDITAR";
+    public static final String PROVEEDOR_ELIMINAR = "PROVEEDOR_ELIMINAR";
+    public static final String PROVEEDOR_ACTIVAR = "PROVEEDOR_ACTIVAR";
+
     // Ventas, devoluciones y cambios
     public static final String VENTA_VER = "VENTA_VER";
     public static final String VENTA_CREAR = "VENTA_CREAR";

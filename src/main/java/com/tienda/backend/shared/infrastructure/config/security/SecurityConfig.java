@@ -175,6 +175,14 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PUT, "/api/v1/metodos-pago/*").hasAuthority(METODO_PAGO_EDITAR)
                         .requestMatchers(HttpMethod.DELETE, "/api/v1/metodos-pago/*").hasAuthority(METODO_PAGO_ELIMINAR)
 
+                        // Proveedores: datos de contacto, solo con permiso (incluso para leer)
+                        .requestMatchers(HttpMethod.GET, "/api/v1/proveedores/**").hasAuthority(PROVEEDOR_VER)
+                        .requestMatchers(HttpMethod.PATCH, "/api/v1/proveedores/*/activar", "/api/v1/proveedores/*/desactivar")
+                                .hasAuthority(PROVEEDOR_ACTIVAR)
+                        .requestMatchers(HttpMethod.POST, "/api/v1/proveedores").hasAuthority(PROVEEDOR_CREAR)
+                        .requestMatchers(HttpMethod.PUT, "/api/v1/proveedores/*").hasAuthority(PROVEEDOR_EDITAR)
+                        .requestMatchers(HttpMethod.DELETE, "/api/v1/proveedores/*").hasAuthority(PROVEEDOR_ELIMINAR)
+
                         // Inventario: consultar con INVENTARIO_VER; registrar movimientos con INVENTARIO_MOVER
                         .requestMatchers(HttpMethod.GET, "/api/v1/inventario/**")
                                 .hasAnyAuthority(INVENTARIO_VER, INVENTARIO_MOVER)

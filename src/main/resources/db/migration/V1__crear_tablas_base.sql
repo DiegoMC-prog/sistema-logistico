@@ -691,7 +691,11 @@ INSERT INTO permisos (nombre, modulo, accion, estandar, descripcion, created_by,
     ('VENTA_PRECIO_MODIFICAR', 'VENTA', 'PRECIO_MODIFICAR', FALSE, 'Cambiar el precio de una linea durante la venta', 'SISTEMA', 'SISTEMA'),
     ('VENTA_PRECIO_BAJO_COSTO', 'VENTA', 'PRECIO_BAJO_COSTO', FALSE, 'Vender con un precio manual por debajo del costo', 'SISTEMA', 'SISTEMA'),
 
-    ('PROVEEDOR_GESTIONAR', 'PROVEEDOR', 'GESTIONAR', FALSE, 'Gestionar proveedores', 'SISTEMA', 'SISTEMA'),
+    ('PROVEEDOR_VER', 'PROVEEDOR', 'VER', TRUE, 'Consultar proveedores', 'SISTEMA', 'SISTEMA'),
+    ('PROVEEDOR_CREAR', 'PROVEEDOR', 'CREAR', TRUE, 'Crear proveedores', 'SISTEMA', 'SISTEMA'),
+    ('PROVEEDOR_EDITAR', 'PROVEEDOR', 'EDITAR', TRUE, 'Editar proveedores', 'SISTEMA', 'SISTEMA'),
+    ('PROVEEDOR_ELIMINAR', 'PROVEEDOR', 'ELIMINAR', TRUE, 'Eliminar proveedores', 'SISTEMA', 'SISTEMA'),
+    ('PROVEEDOR_ACTIVAR', 'PROVEEDOR', 'ACTIVAR', FALSE, 'Activar y desactivar proveedores', 'SISTEMA', 'SISTEMA'),
     ('PEDIDO_GESTIONAR', 'PEDIDO', 'GESTIONAR', FALSE, 'Gestionar pedidos a proveedores y sus recepciones', 'SISTEMA', 'SISTEMA');
 
 -- Rol de sistema ADMIN con todos los permisos
