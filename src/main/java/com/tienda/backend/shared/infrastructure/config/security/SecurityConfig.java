@@ -193,6 +193,9 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.DELETE, "/api/v1/pedidos/*").hasAuthority(PEDIDO_ELIMINAR)
 
                         // Reportes: cada familia con su permiso (se agregan a medida que existen)
+                        // El panel de inicio lo pide cualquier usuario autenticado: el servicio solo incluye los bloques
+                        // de los reportes que su usuario puede ver
+                        .requestMatchers(HttpMethod.GET, "/api/v1/reportes/panel").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/v1/reportes/ventas/**").hasAuthority(REPORTE_VENTAS)
                         .requestMatchers(HttpMethod.GET, "/api/v1/reportes/inventario/**").hasAuthority(REPORTE_INVENTARIO)
                         .requestMatchers(HttpMethod.GET, "/api/v1/reportes/caja/**").hasAuthority(REPORTE_CAJA)
