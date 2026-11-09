@@ -1,5 +1,6 @@
 package com.tienda.backend.auth.infrastructure.adapter.out.persistence;
 
+import com.tienda.backend.auth.application.model.ContactoUsuario;
 import com.tienda.backend.auth.application.model.CredencialesUsuario;
 import com.tienda.backend.auth.application.model.DatosAcceso;
 import com.tienda.backend.auth.application.port.out.UsuarioAutenticacionPort;
@@ -37,6 +38,20 @@ public class UsuarioAutenticacionAdapter implements UsuarioAutenticacionPort {
     }
 
     @Override
+    public Optional<ContactoUsuario> buscarContactoPorIdentificador(String identificador) {
+        Optional<Usuario> usuario = usuarioRepositoryPort.findByUsername(identificador);
+        if (usuario.isEmpty()) {
+            usuario = usuarioRepositoryPort.findByEmail(identificador);
+        }
+        return usuario.map(this::contacto);
+    }
+
+    @Override
+    public Optional<ContactoUsuario> buscarContactoPorId(Long usuarioId) {
+        return usuarioRepositoryPort.findById(usuarioId).map(this::contacto);
+    }
+
+    @Override
     public Optional<DatosAcceso> cargarDatosAcceso(Long usuarioId) {
         return usuarioRepositoryPort.findById(usuarioId).map(usuario -> {
             Set<Long> rolIds = usuarioRepositoryPort.findRolIdsByUsuarioId(usuarioId);
@@ -69,6 +84,10 @@ public class UsuarioAutenticacionAdapter implements UsuarioAutenticacionPort {
     @Override
     public List<Long> usuarioIdsPorRol(Long rolId) {
         return usuarioRepositoryPort.findUsuarioIdsByRolId(rolId);
+    }
+
+    private ContactoUsuario contacto(Usuario u) {
+        return new ContactoUsuario(u.getId(), u.getUsername(), u.getNombre(), u.getEmail(), u.estaActivo());
     }
 
     private CredencialesUsuario credenciales(Usuario usuario) {

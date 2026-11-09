@@ -19,4 +19,9 @@ public interface TokenPort {
     String generarRefreshToken();
 
     String hashRefreshToken(String refreshToken);
+
+    /** Token aleatorio e impredecible en claro, para enlaces de un solo uso (solo se guarda su hash). */
+    String generarTokenOpaco();
+
+    String hashTokenOpaco(String token);
 }

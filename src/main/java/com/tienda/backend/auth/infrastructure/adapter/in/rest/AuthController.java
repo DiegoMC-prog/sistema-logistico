@@ -6,10 +6,14 @@ import com.tienda.backend.auth.application.port.in.CerrarSesionUseCase;
 import com.tienda.backend.auth.application.port.in.LoginUseCase;
 import com.tienda.backend.auth.application.port.in.ObtenerPerfilUseCase;
 import com.tienda.backend.auth.application.port.in.RefrescarSesionUseCase;
+import com.tienda.backend.auth.application.port.in.RestablecerPasswordUseCase;
+import com.tienda.backend.auth.application.port.in.SolicitarRestablecimientoUseCase;
 import com.tienda.backend.auth.infrastructure.adapter.in.rest.dto.CambiarPasswordRequest;
 import com.tienda.backend.auth.infrastructure.adapter.in.rest.dto.LoginRequest;
 import com.tienda.backend.auth.infrastructure.adapter.in.rest.dto.PerfilResponse;
 import com.tienda.backend.auth.infrastructure.adapter.in.rest.dto.RefreshRequest;
+import com.tienda.backend.auth.infrastructure.adapter.in.rest.dto.RestablecerPasswordRequest;
+import com.tienda.backend.auth.infrastructure.adapter.in.rest.dto.SolicitarRestablecimientoRequest;
 import com.tienda.backend.auth.infrastructure.adapter.in.rest.dto.TokenResponse;
 import com.tienda.backend.auth.infrastructure.security.UsuarioAutenticado;
 import jakarta.servlet.http.HttpServletRequest;
@@ -19,6 +23,8 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/auth")
@@ -31,6 +37,8 @@ public class AuthController {
     private final CerrarSesionUseCase cerrarSesionUseCase;
     private final CambiarPasswordUseCase cambiarPasswordUseCase;
     private final ObtenerPerfilUseCase obtenerPerfilUseCase;
+    private final SolicitarRestablecimientoUseCase solicitarRestablecimientoUseCase;
+    private final RestablecerPasswordUseCase restablecerPasswordUseCase;
 
     @PostMapping("/login")
     public ResponseEntity<TokenResponse> login(@Valid @RequestBody LoginRequest request, HttpServletRequest http) {
@@ -64,6 +72,25 @@ public class AuthController {
     public ResponseEntity<Void> cambiarPassword(@AuthenticationPrincipal UsuarioAutenticado usuario,
                                                 @Valid @RequestBody CambiarPasswordRequest request) {
         cambiarPasswordUseCase.cambiarPassword(usuario.id(), request.passwordActual(), request.passwordNueva());
+        return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * "Olvidé mi contraseña" (público). Responde siempre 202 con el mismo mensaje, exista o no la cuenta, para no
+     * revelar qué usuarios existen. 429 si esa IP pidió demasiados enlaces.
+     */
+    @PostMapping("/olvide-password")
+    public ResponseEntity<Map<String, String>> olvidePassword(@Valid @RequestBody SolicitarRestablecimientoRequest request,
+                                                              HttpServletRequest http) {
+        solicitarRestablecimientoUseCase.solicitar(request.identificador(), http.getRemoteAddr());
+        return ResponseEntity.accepted().body(Map.of("mensaje",
+                "Si la cuenta existe y está activa, recibirá un correo con las instrucciones para restablecer su contraseña."));
+    }
+
+    /** Fija la contraseña nueva con el token del enlace (público). Cierra todas las sesiones del usuario. */
+    @PostMapping("/restablecer-password")
+    public ResponseEntity<Void> restablecerPassword(@Valid @RequestBody RestablecerPasswordRequest request) {
+        restablecerPasswordUseCase.restablecer(request.token(), request.passwordNueva());
         return ResponseEntity.noContent().build();
     }
 

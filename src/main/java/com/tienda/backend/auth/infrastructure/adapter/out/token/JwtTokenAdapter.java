@@ -107,6 +107,16 @@ public class JwtTokenAdapter implements TokenPort {
         }
     }
 
+    @Override
+    public String generarTokenOpaco() {
+        return generarRefreshToken();
+    }
+
+    @Override
+    public String hashTokenOpaco(String token) {
+        return hashRefreshToken(token);
+    }
+
     private static List<String> lista(Object valor) {
         if (valor instanceof List<?> elementos) {
             return elementos.stream().map(String::valueOf).toList();
