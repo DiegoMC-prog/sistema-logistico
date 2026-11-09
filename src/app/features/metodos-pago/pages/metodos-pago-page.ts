@@ -3,6 +3,8 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { errorMessage } from '../../../core/api/api-error';
 import { EstadoCounts, estadoCounts, isActivo } from '../../../core/api/estado';
 import { PagedList } from '../../../core/api/paged-list';
+import { AuthService } from '../../../core/auth/auth.service';
+import { MODULOS } from '../../../core/auth/permisos';
 import { Badge } from '../../../shared/ui/badge';
 import { Btn, IconBtn } from '../../../shared/ui/button';
 import { Card } from '../../../shared/ui/card';
@@ -29,7 +31,9 @@ import { MetodosPagoService } from '../data/metodos-pago.service';
           <h2 class="text-lg font-semibold text-ink">Métodos de pago</h2>
           <p class="mt-1 text-sm text-muted">«EFECTIVO» y «CREDITO_DEVOLUCION» son de sistema; el crédito de devolución no se ofrece al cobrar.</p>
         </div>
-        <button appBtn icon="plus" (click)="openForm(null)">Nuevo método</button>
+        @if (puede.crear) {
+          <button appBtn icon="plus" (click)="openForm(null)">Nuevo método</button>
+        }
       </div>
 
       @if (actionError()) {
@@ -74,7 +78,7 @@ import { MetodosPagoService } from '../data/metodos-pago.service';
                       <td class="text-sm text-muted">{{ m.paraCobro ? 'Cobro y reembolso' : 'Solo interno' }}</td>
                       <td>
                         <div class="flex items-center gap-3">
-                          <app-toggle [checked]="isActivo(m.estado)" [disabled]="sistema(m) || togglingId() === m.id"
+                          <app-toggle [checked]="isActivo(m.estado)" [disabled]="sistema(m) || togglingId() === m.id || !puede.activar"
                             [label]="'Cambiar estado de ' + m.nombre" (checkedChange)="toggle(m, $event)" />
                           <app-badge [tone]="isActivo(m.estado) ? 'success' : 'neutral'">{{ isActivo(m.estado) ? 'Activo' : 'Inactivo' }}</app-badge>
                         </div>
@@ -82,8 +86,8 @@ import { MetodosPagoService } from '../data/metodos-pago.service';
                       <td>
                         <div class="flex justify-end">
                           @if (!sistema(m)) {
-                            <button appIconBtn icon="edit" [label]="'Editar ' + m.nombre" (click)="openForm(m)"></button>
-                            <button appIconBtn icon="trash" danger [label]="'Eliminar ' + m.nombre" (click)="toDelete.set(m)"></button>
+                            @if (puede.editar) { <button appIconBtn icon="edit" [label]="'Editar ' + m.nombre" (click)="openForm(m)"></button> }
+                            @if (puede.eliminar) { <button appIconBtn icon="trash" danger [label]="'Eliminar ' + m.nombre" (click)="toDelete.set(m)"></button> }
                           }
                         </div>
                       </td>
@@ -131,6 +135,7 @@ export class MetodosPagoPage {
   protected readonly isActivo = isActivo;
   protected readonly sistema = esMetodoSistema;
 
+  protected readonly puede = inject(AuthService).crud(MODULOS.metodoPago);
   protected readonly list = new PagedList<MetodoPago, MetodoPagoFilters>((f) => this.service.list(f));
   protected readonly counts = signal<EstadoCounts | null>(null);
 
