@@ -10,7 +10,9 @@ public record ClienteResponse(
         String nombre,
         String telefono,
         String email,
-        String estado
+        String estado,
+        boolean creditoHabilitado,
+        java.math.BigDecimal limiteCredito
 ) {
     public record TipoClienteResumen(Long id, String nombre) {
     }
@@ -18,6 +20,7 @@ public record ClienteResponse(
     public static ClienteResponse from(ClienteDetalle d) {
         Cliente c = d.cliente();
         return new ClienteResponse(c.getId(), new TipoClienteResumen(c.getTipoClienteId(), d.tipoClienteNombre()),
-                c.getDocumento(), c.getNombre(), c.getTelefono(), c.getEmail(), c.getEstado().name());
+                c.getDocumento(), c.getNombre(), c.getTelefono(), c.getEmail(), c.getEstado().name(),
+                c.isCreditoHabilitado(), c.getLimiteCredito());
     }
 }

@@ -10,7 +10,7 @@ public class ClientePersistenceMapper {
     public Cliente toDomain(ClienteEntity e) {
         if (e == null) return null;
         return new Cliente(e.getId(), e.getTipoCliente().getId(), e.getDocumento(), e.getNombre(),
-                e.getTelefono(), e.getEmail(), EstadoCliente.valueOf(e.getEstado()));
+                e.getTelefono(), e.getEmail(), EstadoCliente.valueOf(e.getEstado()), e.isCreditoHabilitado(), e.getLimiteCredito());
     }
 
     public ClienteEntity toEntity(Cliente d) {
@@ -23,6 +23,8 @@ public class ClientePersistenceMapper {
                 .telefono(d.getTelefono())
                 .email(d.getEmail())
                 .estado(d.getEstado().name())
+                .creditoHabilitado(d.isCreditoHabilitado())
+                .limiteCredito(d.getLimiteCredito())
                 .build();
     }
 }

@@ -161,6 +161,11 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PUT, "/api/v1/depositos/*").hasAuthority(DEPOSITO_EDITAR)
                         .requestMatchers(HttpMethod.DELETE, "/api/v1/depositos/*").hasAuthority(DEPOSITO_ELIMINAR)
 
+                        // Creditos (cuentas por cobrar y abonos): van antes de /clientes/**, que las taparia
+                        .requestMatchers(HttpMethod.GET, "/api/v1/clientes/*/estado-cuenta", "/api/v1/abonos/**",
+                                "/api/v1/creditos/**").hasAuthority(CREDITO_GESTIONAR)
+                        .requestMatchers(HttpMethod.POST, "/api/v1/clientes/*/abonos").hasAuthority(CREDITO_GESTIONAR)
+
                         // Clientes, tipos de cliente y metodos de pago: caja y ventas los consultan, escribir exige permiso
                         .requestMatchers(HttpMethod.GET, "/api/v1/clientes/**", "/api/v1/tipos-cliente/**",
                                 "/api/v1/metodos-pago/**").authenticated()
@@ -242,7 +247,10 @@ public class SecurityConfig {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowedOrigins(origenes.stream().map(String::trim).filter(o -> !o.isEmpty()).toList());
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-        config.setAllowedHeaders(List.of("Authorization", "Content-Type"));
+        // Idempotency-Key: el frontend la envia en ventas y devoluciones; sin permitirla el navegador bloquea la peticion
+        config.setAllowedHeaders(List.of("Authorization", "Content-Type", "Idempotency-Key"));
+        // Content-Disposition: sin exponerla, el JS del frontend no puede leer el nombre de archivo de las descargas CSV
+        config.setExposedHeaders(List.of("Content-Disposition"));
         config.setAllowCredentials(false);
         config.setMaxAge(3600L);
 

@@ -89,6 +89,9 @@ public final class Permisos {
     public static final String REPORTE_UTILIDAD = "REPORTE_UTILIDAD";
     public static final String REPORTE_COMPRAS = "REPORTE_COMPRAS";
 
+    // Crédito: estado de cuenta de clientes y abonos de deuda
+    public static final String CREDITO_GESTIONAR = "CREDITO_GESTIONAR";
+
     // Ventas, devoluciones y cambios
     public static final String VENTA_VER = "VENTA_VER";
     public static final String VENTA_CREAR = "VENTA_CREAR";

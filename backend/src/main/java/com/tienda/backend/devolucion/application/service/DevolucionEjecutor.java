@@ -9,6 +9,7 @@ import com.tienda.backend.devolucion.application.model.RegistrarDevolucionComand
 import com.tienda.backend.devolucion.application.model.ResultadoVentaCambio;
 import com.tienda.backend.devolucion.application.model.TurnoRef;
 import com.tienda.backend.devolucion.application.model.VentaOriginal;
+import com.tienda.backend.devolucion.application.port.out.CreditoDevolucionPort;
 import com.tienda.backend.devolucion.application.port.out.DevolucionRepositoryPort;
 import com.tienda.backend.devolucion.application.port.out.MetodoPagoDevolucionPort;
 import com.tienda.backend.devolucion.application.port.out.NumeroDevolucionGeneradorPort;
@@ -68,6 +69,7 @@ class DevolucionEjecutor {
     private final StockDevolucionPort stockDevolucionPort;
     private final NumeroDevolucionGeneradorPort numeroDevolucionGeneradorPort;
     private final UsuarioActualPort usuarioActualPort;
+    private final CreditoDevolucionPort creditoDevolucionPort;
 
     /** Plazo en días desde la venta; 0 = sin límite. */
     @Value("${app.devoluciones.dias-maximos:30}")
@@ -130,6 +132,10 @@ class DevolucionEjecutor {
         CalculadorDevolucion.Calculo calculo = CalculadorDevolucion.calcular(venta, op.items(),
                 devolucionRepositoryPort.devueltoPorLinea(venta.id()));
         BigDecimal credito = calculo.monto();
+        // Si la venta se fió, lo devuelto baja primero la deuda del cliente; solo el resto se reembolsa o queda de crédito
+        if ((op.cambio() || op.reembolsar()) && credito.signum() > 0) {
+            credito = credito.subtract(creditoDevolucionPort.descontarDeuda(venta.id(), credito));
+        }
 
         return op.cambio()
                 ? cambio(op, venta, turno, calculo, credito, usuarioId, huella)

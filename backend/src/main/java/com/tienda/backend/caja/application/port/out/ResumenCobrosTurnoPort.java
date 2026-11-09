@@ -10,4 +10,7 @@ public interface ResumenCobrosTurnoPort {
 
     /** Efectivo devuelto a clientes en ese turno (reembolsos de devoluciones en EFECTIVO). */
     java.math.BigDecimal reembolsosEfectivo(Long turnoId);
+
+    /** Abonos de deudas de crédito cobrados en EFECTIVO durante el turno (entran a la caja). */
+    java.math.BigDecimal abonosEfectivo(Long turnoId);
 }

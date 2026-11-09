@@ -44,4 +44,16 @@ public class CajaResumenCobrosAdapter implements ResumenCobrosTurnoPort {
     public java.math.BigDecimal reembolsosEfectivo(Long turnoId) {
         return jdbcTemplate.queryForObject(SQL_REEMBOLSOS, java.math.BigDecimal.class, turnoId);
     }
+
+    private static final String SQL_ABONOS = """
+            SELECT COALESCE(SUM(a.monto), 0)
+            FROM abonos_credito a
+            JOIN metodos_pago mp ON mp.id = a.metodo_pago_id
+            WHERE a.turno_id = ? AND mp.nombre = 'EFECTIVO'
+            """;
+
+    @Override
+    public java.math.BigDecimal abonosEfectivo(Long turnoId) {
+        return jdbcTemplate.queryForObject(SQL_ABONOS, java.math.BigDecimal.class, turnoId);
+    }
 }

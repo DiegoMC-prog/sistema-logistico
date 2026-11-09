@@ -22,6 +22,8 @@ public record TurnoResumenResponse(
         BigDecimal efectivoCobrado,
         /** Efectivo devuelto a clientes en el turno (devoluciones reembolsadas en efectivo). */
         BigDecimal reembolsosEfectivo,
+        /** Abonos de deudas de crédito cobrados en efectivo durante el turno. */
+        BigDecimal abonosEfectivo,
         BigDecimal efectivoEsperado,
         LocalDateTime fechaCierre,
         BigDecimal montoCierreDeclarado,
@@ -39,6 +41,6 @@ public record TurnoResumenResponse(
         return new TurnoResumenResponse(t.getId(), t.getCajaId(), r.cajaNombre(), t.getUsuarioId(), t.getEstado().name(),
                 t.getFechaApertura(), t.getMontoApertura(), r.ingresos(), r.egresos(),
                 r.cobrosPorMetodo().stream().map(CobroResponse::from).toList(), r.efectivoCobrado(),
-                r.reembolsosEfectivo(), r.efectivoEsperado(), t.getFechaCierre(), t.getMontoCierreDeclarado(), r.diferencia());
+                r.reembolsosEfectivo(), r.abonosEfectivo(), r.efectivoEsperado(), t.getFechaCierre(), t.getMontoCierreDeclarado(), r.diferencia());
     }
 }

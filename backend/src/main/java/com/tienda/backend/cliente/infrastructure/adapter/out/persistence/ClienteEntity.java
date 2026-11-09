@@ -38,4 +38,10 @@ public class ClienteEntity extends AuditableEntity {
 
     @Column(name = "estado", nullable = false, length = 50)
     private String estado;
+
+    @Column(name = "credito_habilitado", nullable = false)
+    private boolean creditoHabilitado;
+
+    @Column(name = "limite_credito", nullable = false, precision = 14, scale = 2)
+    private java.math.BigDecimal limiteCredito;
 }

@@ -17,6 +17,7 @@ public record TurnoResumen(
         List<CobroPorMetodo> cobrosPorMetodo,
         BigDecimal efectivoCobrado,
         BigDecimal reembolsosEfectivo,
+        BigDecimal abonosEfectivo,
         BigDecimal efectivoEsperado,
         BigDecimal diferencia
 ) {

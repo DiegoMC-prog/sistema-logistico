@@ -12,6 +12,7 @@ import com.tienda.backend.venta.application.model.ReposicionStock;
 import com.tienda.backend.venta.application.model.TurnoVenta;
 import com.tienda.backend.venta.application.port.out.CatalogoVentaPort;
 import com.tienda.backend.venta.application.port.out.ClienteVentaPort;
+import com.tienda.backend.venta.application.port.out.CreditoVentaPort;
 import com.tienda.backend.venta.application.port.out.MetodoPagoVentaPort;
 import com.tienda.backend.venta.application.port.out.NumeroVentaGeneradorPort;
 import com.tienda.backend.venta.application.port.out.PrecioVentaPort;
@@ -87,6 +88,7 @@ class VentaEjecutor {
     private final StockVentaPort stockVentaPort;
     private final UsuarioActualPort usuarioActualPort;
     private final VentaDevolucionConsultaPort devolucionConsultaPort;
+    private final CreditoVentaPort creditoVentaPort;
 
     /** Resultado interno: la venta y si se creó ahora (false = reintento idempotente). */
     record Registrada(Venta venta, boolean creada, BigDecimal creditoAplicado) {
@@ -130,6 +132,10 @@ class VentaEjecutor {
         Long tipoClienteId = cliente == null ? null : cliente.tipoClienteId();
         List<ArmadorLineas.ItemResuelto> items = resolverItems(cmd.items(), tipoClienteId);
         Map<Long, MetodoPagoRef> metodos = resolverMetodos(cmd.pagos());
+        boolean aCredito = metodos.values().stream().anyMatch(m -> MetodoPago.NOMBRE_CREDITO_CLIENTE.equals(m.nombre()));
+        if (aCredito && cliente == null) {
+            throw new VentaDatosInvalidosException("Una venta a crédito requiere seleccionar un cliente");
+        }
 
         // 3. Insertar la venta primero: con una clave repetida concurrente, el índice único hace esperar y rechaza al segundo
         Venta venta = ventaRepositoryPort.save(Venta.iniciar(numeroVentaGeneradorPort.siguiente(), turno.turnoId(),
@@ -168,7 +174,17 @@ class VentaEjecutor {
         pagos.addAll(resolverPagos(cmd.pagos(), metodos, total.subtract(credito), vuelto));
 
         venta.completar(lineas, pagos, subtotal, descuento, total, vuelto[0]);
-        return new Registrada(ventaRepositoryPort.save(venta), true, credito);
+        Venta guardada = ventaRepositoryPort.save(venta);
+
+        // La parte pagada con CREDITO queda como deuda del cliente (misma transacción: si falla, no queda la venta)
+        BigDecimal deuda = pagos.stream()
+                .filter(p -> metodos.containsKey(p.metodoPagoId())
+                        && MetodoPago.NOMBRE_CREDITO_CLIENTE.equals(metodos.get(p.metodoPagoId()).nombre()))
+                .map(PagoVenta::monto).reduce(BigDecimal.ZERO, BigDecimal::add);
+        if (deuda.signum() > 0) {
+            creditoVentaPort.crearCuenta(cliente.id(), guardada.getId(), deuda);
+        }
+        return new Registrada(guardada, true, credito);
     }
 
     Venta anular(Long ventaId, String motivo) {
@@ -200,6 +216,7 @@ class VentaEjecutor {
         }
         stockVentaPort.reponer(venta.getDepositoId(), "Anulación de la venta " + venta.getNumeroVenta(),
                 List.copyOf(repos.values()), venta.getId());
+        creditoVentaPort.anularCuenta(venta.getId());   // falla si ya tiene abonos: se revierte toda la anulación
         return ventaRepositoryPort.save(venta);
     }
 

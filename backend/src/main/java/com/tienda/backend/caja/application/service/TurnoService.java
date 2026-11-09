@@ -83,7 +83,7 @@ public class TurnoService implements AbrirTurnoUseCase, CerrarTurnoUseCase, Regi
         turno.exigirAbierto();
         exigirDuenoOSupervisor(turno, "cerrar");
 
-        BigDecimal esperado = efectivoEsperado(turno, totales(turnoId), cobros(turnoId), reembolsos(turnoId));
+        BigDecimal esperado = efectivoEsperado(turno, totales(turnoId), cobros(turnoId), reembolsos(turnoId), abonos(turnoId));
         turno.cerrar(montoDeclarado, esperado);
         TurnoCaja cerrado = turnoRepositoryPort.save(turno);
         return resumen(cerrado, buscarCaja(cerrado.getCajaId()).getNombre());
@@ -99,7 +99,7 @@ public class TurnoService implements AbrirTurnoUseCase, CerrarTurnoUseCase, Regi
 
         MovimientoCaja movimiento = MovimientoCaja.registrar(turnoId, usuarioActualPort.id(), tipo, monto, motivo);
         if (tipo == TipoMovimientoCaja.EGRESO) {
-            BigDecimal disponible = efectivoEsperado(turno, totales(turnoId), cobros(turnoId), reembolsos(turnoId));
+            BigDecimal disponible = efectivoEsperado(turno, totales(turnoId), cobros(turnoId), reembolsos(turnoId), abonos(turnoId));
             if (movimiento.getMonto().compareTo(disponible) > 0) {
                 throw new SaldoCajaInsuficienteException(disponible);
             }
@@ -182,28 +182,33 @@ public class TurnoService implements AbrirTurnoUseCase, CerrarTurnoUseCase, Regi
         return resumenCobrosTurnoPort.reembolsosEfectivo(turnoId);
     }
 
-    /** apertura + ingresos - egresos + ventas cobradas en efectivo - reembolsos de devoluciones en efectivo. */
+    private BigDecimal abonos(Long turnoId) {
+        return resumenCobrosTurnoPort.abonosEfectivo(turnoId);
+    }
+
+    /** apertura + ingresos - egresos + ventas en efectivo + abonos de crédito en efectivo - reembolsos en efectivo. */
     private BigDecimal efectivoEsperado(TurnoCaja turno, TotalesMovimientos t, List<CobroPorMetodo> cobros,
-                                        BigDecimal reembolsos) {
+                                        BigDecimal reembolsos, BigDecimal abonos) {
         return turno.getMontoApertura().add(t.ingresos()).subtract(t.egresos()).add(efectivoCobrado(cobros))
-                .subtract(reembolsos);
+                .add(abonos).subtract(reembolsos);
     }
 
     @Override
     @Transactional(readOnly = true)
     public BigDecimal efectivoDisponible(Long turnoId) {
         TurnoCaja turno = turnoRepositoryPort.findById(turnoId).orElseThrow(() -> new TurnoNotFoundException(turnoId));
-        return efectivoEsperado(turno, totales(turnoId), cobros(turnoId), reembolsos(turnoId));
+        return efectivoEsperado(turno, totales(turnoId), cobros(turnoId), reembolsos(turnoId), abonos(turnoId));
     }
 
     private TurnoResumen resumen(TurnoCaja turno, String cajaNombre) {
         TotalesMovimientos t = totales(turno.getId());
         List<CobroPorMetodo> cobros = cobros(turno.getId());
         BigDecimal reembolsos = reembolsos(turno.getId());
-        BigDecimal esperado = turno.estaAbierto() ? efectivoEsperado(turno, t, cobros, reembolsos)
+        BigDecimal abonos = abonos(turno.getId());
+        BigDecimal esperado = turno.estaAbierto() ? efectivoEsperado(turno, t, cobros, reembolsos, abonos)
                 : turno.getMontoCierreEsperado();
         BigDecimal diferencia = turno.estaAbierto() ? null : turno.getMontoCierreDeclarado().subtract(esperado);
         return new TurnoResumen(turno, cajaNombre, t.ingresos(), t.egresos(), cobros, efectivoCobrado(cobros),
-                reembolsos, esperado, diferencia);
+                reembolsos, abonos, esperado, diferencia);
     }
 }

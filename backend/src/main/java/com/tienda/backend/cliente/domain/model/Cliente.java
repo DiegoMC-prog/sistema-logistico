@@ -4,6 +4,8 @@ import com.tienda.backend.cliente.domain.exception.ClienteDatosInvalidosExceptio
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.Locale;
 import java.util.regex.Pattern;
 
@@ -26,10 +28,13 @@ public class Cliente {
     private String telefono;
     private String email;
     private EstadoCliente estado;
+    /** RF-28: si puede comprar a crédito (fiado) y hasta cuánto puede deber en total. */
+    private boolean creditoHabilitado;
+    private BigDecimal limiteCredito;
 
     /** Reconstrucción desde persistencia. */
     public Cliente(Long id, Long tipoClienteId, String documento, String nombre, String telefono, String email,
-                   EstadoCliente estado) {
+                   EstadoCliente estado, boolean creditoHabilitado, BigDecimal limiteCredito) {
         this.id = id;
         this.tipoClienteId = tipoClienteId;
         setDocumento(documento);
@@ -40,14 +45,18 @@ public class Cliente {
             throw new ClienteDatosInvalidosException("El estado del cliente es obligatorio");
         }
         this.estado = estado;
+        setCredito(creditoHabilitado, limiteCredito);
     }
 
     /** Cliente nuevo: nace ACTIVO y sin id. */
-    public Cliente(Long tipoClienteId, String documento, String nombre, String telefono, String email) {
-        this(null, tipoClienteId, documento, nombre, telefono, email, EstadoCliente.ACTIVO);
+    public Cliente(Long tipoClienteId, String documento, String nombre, String telefono, String email,
+                   boolean creditoHabilitado, BigDecimal limiteCredito) {
+        this(null, tipoClienteId, documento, nombre, telefono, email, EstadoCliente.ACTIVO, creditoHabilitado, limiteCredito);
     }
 
-    public void editar(Long tipoClienteId, String documento, String nombre, String telefono, String email) {
+    public void editar(Long tipoClienteId, String documento, String nombre, String telefono, String email,
+                       boolean creditoHabilitado, BigDecimal limiteCredito) {
+        setCredito(creditoHabilitado, limiteCredito);
         this.tipoClienteId = tipoClienteId;
         setDocumento(documento);
         setNombre(nombre);
@@ -65,6 +74,18 @@ public class Cliente {
 
     public void desactivar() {
         this.estado = EstadoCliente.INACTIVO;
+    }
+
+    private void setCredito(boolean habilitado, BigDecimal limite) {
+        BigDecimal valor = limite == null ? BigDecimal.ZERO : limite;
+        if (valor.signum() < 0 || valor.stripTrailingZeros().scale() > 2 || valor.compareTo(new BigDecimal("999999999999")) > 0) {
+            throw new ClienteDatosInvalidosException("El límite de crédito debe ser mayor o igual a cero, con hasta 2 decimales");
+        }
+        if (habilitado && valor.signum() == 0) {
+            throw new ClienteDatosInvalidosException("Para habilitar el crédito indique un límite mayor a cero");
+        }
+        this.creditoHabilitado = habilitado;
+        this.limiteCredito = valor.setScale(2, RoundingMode.HALF_UP);
     }
 
     private void setNombre(String nombre) {

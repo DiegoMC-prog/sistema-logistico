@@ -41,6 +41,7 @@ public class ReporteCajaService implements ConsultarReporteCajaUseCase {
         totales.put("otrosMetodos", suma(filas, FilasCaja.Cierre::otrosMetodos));
         totales.put("ingresos", suma(filas, FilasCaja.Cierre::ingresos));
         totales.put("egresos", suma(filas, FilasCaja.Cierre::egresos));
+        totales.put("abonosEfectivo", suma(filas, FilasCaja.Cierre::abonosEfectivo));
         totales.put("reembolsosEfectivo", suma(filas, FilasCaja.Cierre::reembolsosEfectivo));
         // El esperado, el declarado y la diferencia solo tienen sentido en los turnos ya cerrados
         totales.put("efectivoEsperadoCerrados", suma(cerrados, FilasCaja.Cierre::efectivoEsperado));

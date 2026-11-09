@@ -53,7 +53,8 @@ public class ClienteService implements CrearClienteUseCase, EditarClienteUseCase
             throw new ClienteDocumentoDuplicadoException(datos.getDocumento());
         }
 
-        existente.editar(tipo.id(), datos.getDocumento(), datos.getNombre(), datos.getTelefono(), datos.getEmail());
+        existente.editar(tipo.id(), datos.getDocumento(), datos.getNombre(), datos.getTelefono(), datos.getEmail(),
+                datos.isCreditoHabilitado(), datos.getLimiteCredito());
         return new ClienteDetalle(clienteRepositoryPort.save(existente), tipo.nombre());
     }
 

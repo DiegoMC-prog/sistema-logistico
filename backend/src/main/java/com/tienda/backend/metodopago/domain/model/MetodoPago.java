@@ -13,6 +13,8 @@ public class MetodoPago {
     public static final String NOMBRE_EFECTIVO = "EFECTIVO";
     /** Método interno: el crédito de una devolución aplicado a la venta de un cambio. No sirve para cobrar ni reembolsar. */
     public static final String NOMBRE_CREDITO = "CREDITO_DEVOLUCION";
+    /** Método de sistema: la parte de una venta que el cliente deja a deber (cuenta por cobrar). Exige un cliente con crédito. */
+    public static final String NOMBRE_CREDITO_CLIENTE = "CREDITO";
     private static final int NOMBRE_MAX = 100;
 
     @EqualsAndHashCode.Include
@@ -50,7 +52,7 @@ public class MetodoPago {
     }
 
     public boolean esDeSistema() {
-        return NOMBRE_EFECTIVO.equals(nombre) || NOMBRE_CREDITO.equals(nombre);
+        return NOMBRE_EFECTIVO.equals(nombre) || NOMBRE_CREDITO.equals(nombre) || NOMBRE_CREDITO_CLIENTE.equals(nombre);
     }
 
     /** false para el crédito de devolución: el frontend no debe ofrecerlo como método de cobro. */

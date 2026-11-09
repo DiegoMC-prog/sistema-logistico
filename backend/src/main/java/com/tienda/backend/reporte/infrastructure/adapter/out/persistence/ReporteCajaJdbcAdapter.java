@@ -55,14 +55,17 @@ public class ReporteCajaJdbcAdapter implements ReporteCajaRepositoryPort {
                        (SELECT COALESCE(SUM(pg.monto), 0) FROM venta_pagos pg
                          JOIN ventas v ON v.id = pg.venta_id JOIN metodos_pago mp ON mp.id = pg.metodo_pago_id
                          WHERE v.turno_id = t.id AND v.estado = 'COMPLETADA'
-                           AND mp.nombre NOT IN ('EFECTIVO', 'CREDITO_DEVOLUCION')),
+                           AND mp.nombre NOT IN ('EFECTIVO', 'CREDITO_DEVOLUCION', 'CREDITO')),
                        (SELECT COALESCE(SUM(mc.monto), 0) FROM movimientos_caja mc
                          WHERE mc.turno_id = t.id AND mc.tipo = 'INGRESO'),
                        (SELECT COALESCE(SUM(mc.monto), 0) FROM movimientos_caja mc
                          WHERE mc.turno_id = t.id AND mc.tipo = 'EGRESO'),
                        (SELECT COALESCE(SUM(d.monto_reembolsado), 0) FROM devoluciones_venta d
                          JOIN metodos_pago mp ON mp.id = d.metodo_pago_id
-                         WHERE d.turno_id = t.id AND mp.nombre = 'EFECTIVO')
+                         WHERE d.turno_id = t.id AND mp.nombre = 'EFECTIVO'),
+                       (SELECT COALESCE(SUM(ab.monto), 0) FROM abonos_credito ab
+                         JOIN metodos_pago mp ON mp.id = ab.metodo_pago_id
+                         WHERE ab.turno_id = t.id AND mp.nombre = 'EFECTIVO')
                 FROM turnos_caja t
                 JOIN cajas c ON c.id = t.caja_id
                 JOIN usuarios u ON u.id = t.usuario_id
@@ -76,10 +79,11 @@ public class ReporteCajaJdbcAdapter implements ReporteCajaRepositoryPort {
             BigDecimal ingresos = rs.getBigDecimal(16);
             BigDecimal egresos = rs.getBigDecimal(17);
             BigDecimal reembolsos = rs.getBigDecimal(18);
+            BigDecimal abonos = rs.getBigDecimal(19);
 
             boolean cerrado = "CERRADO".equals(rs.getString(6));
             BigDecimal esperado = cerrado && esperadoGuardado != null ? esperadoGuardado
-                    : apertura.add(ingresos).subtract(egresos).add(efectivo).subtract(reembolsos);
+                    : apertura.add(ingresos).subtract(egresos).add(efectivo).add(abonos).subtract(reembolsos);
             Timestamp cierre = rs.getTimestamp(8);
 
             return new FilasCaja.Cierre(rs.getLong(1), rs.getLong(2), rs.getString(3), rs.getLong(4), rs.getString(5),
@@ -87,7 +91,7 @@ public class ReporteCajaJdbcAdapter implements ReporteCajaRepositoryPort {
                     m(apertura), rs.getLong(12), m(rs.getBigDecimal(13)), m(efectivo), m(rs.getBigDecimal(15)),
                     m(ingresos), m(egresos), m(reembolsos), m(esperado),
                     cerrado && declarado != null ? m(declarado) : null,
-                    cerrado && declarado != null ? m(declarado.subtract(esperado)) : null);
+                    cerrado && declarado != null ? m(declarado.subtract(esperado)) : null, m(abonos));
         }, args.toArray());
     }
 
