@@ -4,6 +4,8 @@
 
 # Documentacion local de desarrollo: no se sube (README, PENDIENTES, guias de la API, HELP...)
 *.md
+# ...salvo el README de la raiz
+!/README.md
 
 # Secretos y configuracion local
 .env
