@@ -3,6 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { API_URL, toParams } from '../../../core/api/api-url';
 import { Page } from '../../../core/api/page.model';
+import { withToast } from '../../../core/ui/toast';
 import { CambioRequest, CambioResponse, Devolucion, DevolucionFilters, DevolucionRequest } from './devolucion.model';
 
 @Injectable({ providedIn: 'root' })
@@ -24,12 +25,14 @@ export class DevolucionesService {
   crear(ventaId: number, body: DevolucionRequest, idempotencyKey: string): Observable<Devolucion> {
     return this.http.post<Devolucion>(`${API_URL}/ventas/${ventaId}/devoluciones`, body, {
       headers: new HttpHeaders({ 'Idempotency-Key': idempotencyKey }),
+      ...withToast('Devolución registrada'),
     });
   }
 
   cambio(ventaId: number, body: CambioRequest, idempotencyKey: string): Observable<CambioResponse> {
     return this.http.post<CambioResponse>(`${API_URL}/ventas/${ventaId}/cambios`, body, {
       headers: new HttpHeaders({ 'Idempotency-Key': idempotencyKey }),
+      ...withToast('Cambio registrado'),
     });
   }
 }
