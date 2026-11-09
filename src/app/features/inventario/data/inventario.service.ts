@@ -3,6 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { API_URL, toParams } from '../../../core/api/api-url';
 import { Page } from '../../../core/api/page.model';
+import { withToast } from '../../../core/ui/toast';
 import {
   AjusteRequest, EntradaRequest, MovimientoFilters, MovimientoInv, SalidaRequest, Stock, StockFilters, TrasladoRequest,
 } from './inventario.model';
@@ -24,18 +25,18 @@ export class InventarioService {
   }
 
   entrada(body: EntradaRequest): Observable<MovimientoInv> {
-    return this.http.post<MovimientoInv>(`${API_URL}/inventario/entradas`, body);
+    return this.http.post<MovimientoInv>(`${API_URL}/inventario/entradas`, body, withToast('Entrada registrada'));
   }
 
   salida(body: SalidaRequest): Observable<MovimientoInv> {
-    return this.http.post<MovimientoInv>(`${API_URL}/inventario/salidas`, body);
+    return this.http.post<MovimientoInv>(`${API_URL}/inventario/salidas`, body, withToast('Salida registrada'));
   }
 
   traslado(body: TrasladoRequest): Observable<MovimientoInv> {
-    return this.http.post<MovimientoInv>(`${API_URL}/inventario/traslados`, body);
+    return this.http.post<MovimientoInv>(`${API_URL}/inventario/traslados`, body, withToast('Traslado registrado'));
   }
 
   ajuste(body: AjusteRequest): Observable<MovimientoInv> {
-    return this.http.post<MovimientoInv>(`${API_URL}/inventario/ajustes`, body);
+    return this.http.post<MovimientoInv>(`${API_URL}/inventario/ajustes`, body, withToast('Ajuste registrado'));
   }
 }
