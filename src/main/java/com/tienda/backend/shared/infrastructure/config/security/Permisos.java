@@ -82,6 +82,9 @@ public final class Permisos {
     public static final String PEDIDO_CANCELAR = "PEDIDO_CANCELAR";
     public static final String PEDIDO_RECIBIR = "PEDIDO_RECIBIR";
 
+    // Reportes
+    public static final String REPORTE_VENTAS = "REPORTE_VENTAS";
+
     // Ventas, devoluciones y cambios
     public static final String VENTA_VER = "VENTA_VER";
     public static final String VENTA_CREAR = "VENTA_CREAR";

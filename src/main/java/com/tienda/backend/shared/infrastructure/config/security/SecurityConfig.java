@@ -192,6 +192,9 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PUT, "/api/v1/pedidos/*").hasAuthority(PEDIDO_EDITAR)
                         .requestMatchers(HttpMethod.DELETE, "/api/v1/pedidos/*").hasAuthority(PEDIDO_ELIMINAR)
 
+                        // Reportes: cada familia con su permiso (se agregan a medida que existen)
+                        .requestMatchers(HttpMethod.GET, "/api/v1/reportes/ventas/**").hasAuthority(REPORTE_VENTAS)
+
                         // Inventario: consultar con INVENTARIO_VER; registrar movimientos con INVENTARIO_MOVER
                         .requestMatchers(HttpMethod.GET, "/api/v1/inventario/**")
                                 .hasAnyAuthority(INVENTARIO_VER, INVENTARIO_MOVER)

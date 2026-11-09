@@ -702,7 +702,9 @@ INSERT INTO permisos (nombre, modulo, accion, estandar, descripcion, created_by,
     ('PEDIDO_ELIMINAR', 'PEDIDO', 'ELIMINAR', TRUE, 'Eliminar pedidos en borrador', 'SISTEMA', 'SISTEMA'),
     ('PEDIDO_ENVIAR', 'PEDIDO', 'ENVIAR', FALSE, 'Enviar pedidos al proveedor', 'SISTEMA', 'SISTEMA'),
     ('PEDIDO_CANCELAR', 'PEDIDO', 'CANCELAR', FALSE, 'Cancelar pedidos', 'SISTEMA', 'SISTEMA'),
-    ('PEDIDO_RECIBIR', 'PEDIDO', 'RECIBIR', FALSE, 'Registrar la recepcion de mercaderia de un pedido', 'SISTEMA', 'SISTEMA');
+    ('PEDIDO_RECIBIR', 'PEDIDO', 'RECIBIR', FALSE, 'Registrar la recepcion de mercaderia de un pedido', 'SISTEMA', 'SISTEMA'),
+
+    ('REPORTE_VENTAS', 'REPORTE', 'VENTAS', FALSE, 'Ver los reportes de ventas (resumen, por producto, cajero, caja, metodo de pago y cliente) y exportarlos', 'SISTEMA', 'SISTEMA');
 
 -- Rol de sistema ADMIN con todos los permisos
 INSERT INTO roles (nombre, created_by, updated_by) VALUES ('ADMIN', 'SISTEMA', 'SISTEMA');
