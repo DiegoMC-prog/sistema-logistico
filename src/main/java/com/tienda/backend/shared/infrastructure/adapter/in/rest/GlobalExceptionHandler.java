@@ -3,6 +3,7 @@ package com.tienda.backend.shared.infrastructure.adapter.in.rest;
 import com.tienda.backend.shared.domain.exception.AccesoDenegadoException;
 import com.tienda.backend.shared.domain.exception.AutenticacionException;
 import com.tienda.backend.shared.domain.exception.BusinessConflictException;
+import com.tienda.backend.shared.domain.exception.DemasiadasSolicitudesException;
 import com.tienda.backend.shared.domain.exception.InvalidBusinessRuleException;
 import com.tienda.backend.shared.domain.exception.ResourceNotFoundException;
 import com.tienda.backend.shared.domain.exception.ServicioExternoException;
@@ -49,6 +50,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(AutenticacionException.class)
     public ProblemDetail handleAutenticacion(AutenticacionException ex) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, ex.getMessage());
+    }
+
+    @ExceptionHandler(DemasiadasSolicitudesException.class)
+    public ProblemDetail handleDemasiadasSolicitudes(DemasiadasSolicitudesException ex) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.TOO_MANY_REQUESTS, ex.getMessage());
     }
 
     @ExceptionHandler(ServicioExternoException.class)
