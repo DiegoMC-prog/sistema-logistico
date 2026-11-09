@@ -3,6 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { API_URL, toParams } from '../../../core/api/api-url';
 import { Page } from '../../../core/api/page.model';
+import { withToast } from '../../../core/ui/toast';
 import { Venta, VentaFilters, VentaRequest, VentaResumen } from './venta.model';
 
 @Injectable({ providedIn: 'root' })
@@ -21,11 +22,12 @@ export class VentasService {
   crear(body: VentaRequest, idempotencyKey: string): Observable<Venta> {
     return this.http.post<Venta>(`${API_URL}/ventas`, body, {
       headers: new HttpHeaders({ 'Idempotency-Key': idempotencyKey }),
+      ...withToast('Venta registrada correctamente'),
     });
   }
 
   anular(id: number, motivo: string): Observable<Venta> {
-    return this.http.post<Venta>(`${API_URL}/ventas/${id}/anular`, { motivo });
+    return this.http.post<Venta>(`${API_URL}/ventas/${id}/anular`, { motivo }, withToast('Venta anulada'));
   }
 }
 
