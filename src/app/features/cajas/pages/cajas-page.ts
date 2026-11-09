@@ -3,6 +3,8 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { errorMessage } from '../../../core/api/api-error';
 import { EstadoCounts, estadoCounts, isActivo } from '../../../core/api/estado';
 import { PagedList } from '../../../core/api/paged-list';
+import { AuthService } from '../../../core/auth/auth.service';
+import { MODULOS } from '../../../core/auth/permisos';
 import { Badge } from '../../../shared/ui/badge';
 import { Btn, IconBtn } from '../../../shared/ui/button';
 import { Card } from '../../../shared/ui/card';
@@ -31,7 +33,9 @@ import { CajasService } from '../data/cajas.service';
           <h2 class="text-lg font-semibold text-ink">Gestión de cajas</h2>
           <p class="mt-1 text-sm text-muted">Una caja con turno abierto no se puede desactivar, eliminar ni mover de depósito.</p>
         </div>
-        <button appBtn icon="plus" (click)="openForm(null)">Nueva caja</button>
+        @if (puede.crear) {
+          <button appBtn icon="plus" (click)="openForm(null)">Nueva caja</button>
+        }
       </div>
 
       @if (actionError()) {
@@ -78,15 +82,15 @@ import { CajasService } from '../data/cajas.service';
                       <td class="text-sm text-muted">{{ depositoNombre(c.depositoId) }}</td>
                       <td>
                         <div class="flex items-center gap-3">
-                          <app-toggle [checked]="isActivo(c.estado)" [disabled]="togglingId() === c.id"
+                          <app-toggle [checked]="isActivo(c.estado)" [disabled]="togglingId() === c.id || !puede.activar"
                             [label]="'Cambiar estado de ' + c.nombre" (checkedChange)="toggle(c, $event)" />
                           <app-badge [tone]="isActivo(c.estado) ? 'success' : 'neutral'">{{ isActivo(c.estado) ? 'Activa' : 'Inactiva' }}</app-badge>
                         </div>
                       </td>
                       <td>
                         <div class="flex justify-end">
-                          <button appIconBtn icon="edit" [label]="'Editar ' + c.nombre" (click)="openForm(c)"></button>
-                          <button appIconBtn icon="trash" danger [label]="'Eliminar ' + c.nombre" (click)="toDelete.set(c)"></button>
+                          @if (puede.editar) { <button appIconBtn icon="edit" [label]="'Editar ' + c.nombre" (click)="openForm(c)"></button> }
+                          @if (puede.eliminar) { <button appIconBtn icon="trash" danger [label]="'Eliminar ' + c.nombre" (click)="toDelete.set(c)"></button> }
                         </div>
                       </td>
                     </tr>
@@ -139,6 +143,7 @@ export class CajasPage {
   private readonly fb = inject(FormBuilder).nonNullable;
   protected readonly isActivo = isActivo;
 
+  protected readonly puede = inject(AuthService).crud(MODULOS.caja);
   protected readonly list = new PagedList<Caja, CajaFilters>((f) => this.service.list(f));
   protected readonly counts = signal<EstadoCounts | null>(null);
   protected readonly depositos = signal<Deposito[]>([]);
