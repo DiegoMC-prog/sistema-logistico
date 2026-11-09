@@ -183,6 +183,15 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PUT, "/api/v1/proveedores/*").hasAuthority(PROVEEDOR_EDITAR)
                         .requestMatchers(HttpMethod.DELETE, "/api/v1/proveedores/*").hasAuthority(PROVEEDOR_ELIMINAR)
 
+                        // Pedidos a proveedores y recepciones: las acciones especiales van antes que el CRUD
+                        .requestMatchers(HttpMethod.POST, "/api/v1/pedidos/*/enviar").hasAuthority(PEDIDO_ENVIAR)
+                        .requestMatchers(HttpMethod.POST, "/api/v1/pedidos/*/cancelar").hasAuthority(PEDIDO_CANCELAR)
+                        .requestMatchers(HttpMethod.POST, "/api/v1/pedidos/*/recepciones").hasAuthority(PEDIDO_RECIBIR)
+                        .requestMatchers(HttpMethod.GET, "/api/v1/pedidos/**").hasAuthority(PEDIDO_VER)
+                        .requestMatchers(HttpMethod.POST, "/api/v1/pedidos").hasAuthority(PEDIDO_CREAR)
+                        .requestMatchers(HttpMethod.PUT, "/api/v1/pedidos/*").hasAuthority(PEDIDO_EDITAR)
+                        .requestMatchers(HttpMethod.DELETE, "/api/v1/pedidos/*").hasAuthority(PEDIDO_ELIMINAR)
+
                         // Inventario: consultar con INVENTARIO_VER; registrar movimientos con INVENTARIO_MOVER
                         .requestMatchers(HttpMethod.GET, "/api/v1/inventario/**")
                                 .hasAnyAuthority(INVENTARIO_VER, INVENTARIO_MOVER)

@@ -73,6 +73,15 @@ public final class Permisos {
     public static final String PROVEEDOR_ELIMINAR = "PROVEEDOR_ELIMINAR";
     public static final String PROVEEDOR_ACTIVAR = "PROVEEDOR_ACTIVAR";
 
+    // Pedidos a proveedores y recepciones
+    public static final String PEDIDO_VER = "PEDIDO_VER";
+    public static final String PEDIDO_CREAR = "PEDIDO_CREAR";
+    public static final String PEDIDO_EDITAR = "PEDIDO_EDITAR";
+    public static final String PEDIDO_ELIMINAR = "PEDIDO_ELIMINAR";
+    public static final String PEDIDO_ENVIAR = "PEDIDO_ENVIAR";
+    public static final String PEDIDO_CANCELAR = "PEDIDO_CANCELAR";
+    public static final String PEDIDO_RECIBIR = "PEDIDO_RECIBIR";
+
     // Ventas, devoluciones y cambios
     public static final String VENTA_VER = "VENTA_VER";
     public static final String VENTA_CREAR = "VENTA_CREAR";

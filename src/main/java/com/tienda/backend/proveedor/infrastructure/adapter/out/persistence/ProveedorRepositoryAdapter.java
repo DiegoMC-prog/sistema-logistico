@@ -10,6 +10,8 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -38,6 +40,11 @@ public class ProveedorRepositoryAdapter implements ProveedorRepositoryPort {
     @Override
     public Optional<Proveedor> findById(Long id) {
         return proveedorJpaRepository.findById(id).map(mapper::toDomain);
+    }
+
+    @Override
+    public List<Proveedor> findAllById(Collection<Long> ids) {
+        return proveedorJpaRepository.findAllById(ids).stream().map(mapper::toDomain).toList();
     }
 
     @Override

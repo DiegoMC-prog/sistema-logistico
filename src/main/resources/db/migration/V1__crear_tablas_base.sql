@@ -696,7 +696,13 @@ INSERT INTO permisos (nombre, modulo, accion, estandar, descripcion, created_by,
     ('PROVEEDOR_EDITAR', 'PROVEEDOR', 'EDITAR', TRUE, 'Editar proveedores', 'SISTEMA', 'SISTEMA'),
     ('PROVEEDOR_ELIMINAR', 'PROVEEDOR', 'ELIMINAR', TRUE, 'Eliminar proveedores', 'SISTEMA', 'SISTEMA'),
     ('PROVEEDOR_ACTIVAR', 'PROVEEDOR', 'ACTIVAR', FALSE, 'Activar y desactivar proveedores', 'SISTEMA', 'SISTEMA'),
-    ('PEDIDO_GESTIONAR', 'PEDIDO', 'GESTIONAR', FALSE, 'Gestionar pedidos a proveedores y sus recepciones', 'SISTEMA', 'SISTEMA');
+    ('PEDIDO_VER', 'PEDIDO', 'VER', TRUE, 'Consultar pedidos a proveedores y sus recepciones', 'SISTEMA', 'SISTEMA'),
+    ('PEDIDO_CREAR', 'PEDIDO', 'CREAR', TRUE, 'Crear pedidos a proveedores', 'SISTEMA', 'SISTEMA'),
+    ('PEDIDO_EDITAR', 'PEDIDO', 'EDITAR', TRUE, 'Editar pedidos en borrador', 'SISTEMA', 'SISTEMA'),
+    ('PEDIDO_ELIMINAR', 'PEDIDO', 'ELIMINAR', TRUE, 'Eliminar pedidos en borrador', 'SISTEMA', 'SISTEMA'),
+    ('PEDIDO_ENVIAR', 'PEDIDO', 'ENVIAR', FALSE, 'Enviar pedidos al proveedor', 'SISTEMA', 'SISTEMA'),
+    ('PEDIDO_CANCELAR', 'PEDIDO', 'CANCELAR', FALSE, 'Cancelar pedidos', 'SISTEMA', 'SISTEMA'),
+    ('PEDIDO_RECIBIR', 'PEDIDO', 'RECIBIR', FALSE, 'Registrar la recepcion de mercaderia de un pedido', 'SISTEMA', 'SISTEMA');
 
 -- Rol de sistema ADMIN con todos los permisos
 INSERT INTO roles (nombre, created_by, updated_by) VALUES ('ADMIN', 'SISTEMA', 'SISTEMA');
