@@ -34,6 +34,15 @@ const COLLAPSED_KEY = 'nav.collapsed';
         <div class="px-2"><app-brand [onDark]="true" /></div>
 
         <nav class="sidebar-scroll mt-8 min-h-0 flex-1 space-y-5 overflow-y-auto pb-4" aria-label="Principal">
+          <a
+            routerLink="/"
+            routerLinkActive="bg-white/10 !text-white"
+            [routerLinkActiveOptions]="{ exact: true }"
+            class="flex h-10 items-center gap-3 rounded-lg px-3 text-sm font-medium text-sidebar-muted transition hover:bg-white/5 hover:text-white"
+            (click)="menuOpen.set(false)"
+          >
+            <app-icon name="activity" />Inicio
+          </a>
           @for (section of nav(); track section.title) {
             <div>
               <button

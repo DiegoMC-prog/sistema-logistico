@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { authGuard, guestGuard, homeGuard, permissionGuard } from './core/auth/auth.guards';
+import { authGuard, guestGuard, permissionGuard } from './core/auth/auth.guards';
 import { MODULOS, PERMISOS, PERMISOS_CAJA, todosDe } from './core/auth/permisos';
 
 export const routes: Routes = [
@@ -28,7 +28,12 @@ export const routes: Routes = [
     loadComponent: () => import('./core/layout/shell').then((m) => m.Shell),
     children: [
       // Inicio: redirige a la primera sección permitida para el usuario.
-      { path: '', pathMatch: 'full', canActivate: [homeGuard], children: [] },
+      {
+        path: '',
+        pathMatch: 'full',
+        data: { title: 'Inicio', subtitle: 'Resumen de la operación' },
+        loadComponent: () => import('./features/inicio/pages/inicio-page').then((m) => m.InicioPage),
+      },
       {
         path: 'sin-acceso',
         data: { title: 'Sin acceso', subtitle: '' },
@@ -78,6 +83,10 @@ export const routes: Routes = [
         path: 'proveedores',
         canActivate: [permissionGuard(PERMISOS.proveedorVer)],
         loadChildren: () => import('./features/proveedores/proveedores.routes').then((m) => m.PROVEEDORES_ROUTES),
+      },
+      {
+        path: 'reportes',
+        loadChildren: () => import('./features/reportes/reportes.routes').then((m) => m.REPORTES_ROUTES),
       },
       {
         path: 'turnos',

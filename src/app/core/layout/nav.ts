@@ -62,6 +62,16 @@ export const NAV_SECTIONS: readonly NavSection[] = [
     ],
   },
   {
+    title: 'Reportes',
+    items: [
+      { label: 'Ventas', path: '/reportes/ventas', icon: 'activity', permiso: PERMISOS.reporteVentas },
+      { label: 'Caja', path: '/reportes/caja', icon: 'wallet', permiso: PERMISOS.reporteCaja },
+      { label: 'Inventario', path: '/reportes/inventario', icon: 'box', permiso: PERMISOS.reporteInventario },
+      { label: 'Utilidad', path: '/reportes/utilidad', icon: 'dollar', permiso: PERMISOS.reporteUtilidad },
+      { label: 'Compras', path: '/reportes/compras', icon: 'truck', permiso: PERMISOS.reporteCompras },
+    ],
+  },
+  {
     title: 'Configuración',
     items: [
       { label: 'Cajas', path: '/cajas', icon: 'grid', permiso: todosDe(MODULOS.caja) },
