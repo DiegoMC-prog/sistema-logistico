@@ -32,18 +32,23 @@ UPDATE movimientos_caja m
 SET fecha = t.fecha_apertura + INTERVAL '2 hours' + (m.id % 10) * INTERVAL '1 minute'
 FROM turnos_caja t WHERE t.id = m.turno_id AND t.estado = 'CERRADO';
 
--- 4. Compras e inventario inicial: ocurrieron antes de las ventas (hace unos 30 dias). Sin esto el kardex mostraria
---    ventas anteriores al ingreso de la mercaderia.
-UPDATE pedidos_proveedor SET fecha_pedido = CURRENT_DATE - 35 + (id % 5)::int;
+-- 4. Compras e inventario inicial: ocurrieron antes de las ventas (hace unos 26 dias). Sin esto el kardex mostraria
+--    ventas anteriores al ingreso de la mercaderia. El pedido es anterior a su recepcion y cae dentro de los 30 dias
+--    por defecto de los reportes.
+UPDATE pedidos_proveedor SET fecha_pedido = CURRENT_DATE - 29 + (id % 3)::int;
 
-UPDATE recepciones_pedido SET fecha_recepcion = (CURRENT_DATE - 30) + id * INTERVAL '1 hour';
+UPDATE recepciones_pedido SET fecha_recepcion = (CURRENT_DATE - 26) + id * INTERVAL '1 hour';
+
+-- Fechas estimadas de entrega de los pedidos pendientes: algunos atrasados y otros a tiempo
+UPDATE pedidos_proveedor SET fecha_entrega_estimada = CURRENT_DATE - 6 + ((id % 4) * 4)::int
+WHERE estado IN ('ENVIADO', 'RECIBIDO_PARCIAL');
 
 WITH iniciales AS (
     SELECT id, ROW_NUMBER() OVER (ORDER BY id) AS rn
     FROM movimientos_inventarios
     WHERE referencia_tipo IS NULL OR referencia_tipo = 'PEDIDO_PROVEEDOR')
 UPDATE movimientos_inventarios m
-SET fecha_movimiento = (CURRENT_DATE - 30) + (i.rn * INTERVAL '20 minutes')
+SET fecha_movimiento = (CURRENT_DATE - 26) + (i.rn * INTERVAL '20 minutes')
 FROM iniciales i WHERE m.id = i.id;
 
 -- 5. Movimientos de inventario de las ventas, sus anulaciones y las devoluciones, con la fecha del hecho

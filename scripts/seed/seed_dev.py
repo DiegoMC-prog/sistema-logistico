@@ -11,6 +11,9 @@ Orden (ver README.md):
   3. python scripts/seed/seed_dev.py 2      turnos, ventas, devoluciones, cambios, anulaciones, cierres de caja
   4. ejecutar fechas.sql                    reparte turnos y ventas en los ultimos 21 dias (para los reportes por fecha)
 
+Para agregar a una base ya sembrada solo las ventas con precio manual o las reposiciones a costos mas altos:
+seed_dev.py precios-manuales / seed_dev.py compras-variacion (y repetir fechas.sql).
+
 Variables: API_BASE (por defecto http://localhost:8080/api/v1).
 Contrasena de todos los usuarios sembrados, incluido admin al terminar: Admin#2026
 """
@@ -145,14 +148,16 @@ ROLES = {
                         "VENTA_ANULAR", "VENTA_DEVOLVER"],
     "ALMACENERO": ["INVENTARIO_VER", "INVENTARIO_MOVER", "CATALOGO_CREAR", "CATALOGO_EDITAR", "DEPOSITO_CREAR",
                    "DEPOSITO_EDITAR", "PEDIDO_VER", "PEDIDO_RECIBIR", "REPORTE_INVENTARIO"],
-    "COMPRADOR": ["PROVEEDOR_VER", "PROVEEDOR_CREAR", "PROVEEDOR_EDITAR", "PROVEEDOR_ACTIVAR", "PEDIDO_VER",
+    "COMPRADOR": ["REPORTE_COMPRAS", "PROVEEDOR_VER", "PROVEEDOR_CREAR", "PROVEEDOR_EDITAR", "PROVEEDOR_ACTIVAR", "PEDIDO_VER",
                   "PEDIDO_CREAR", "PEDIDO_EDITAR", "PEDIDO_ELIMINAR", "PEDIDO_ENVIAR", "PEDIDO_CANCELAR",
                   "PEDIDO_RECIBIR", "INVENTARIO_VER"],
-    "GERENTE": ["VENTA_VER", "REPORTE_VENTAS", "REPORTE_CAJA", "REPORTE_INVENTARIO", "INVENTARIO_VER", "PEDIDO_VER", "PROVEEDOR_VER", "USUARIO_VER",
+    "GERENTE": ["VENTA_VER", "REPORTE_VENTAS", "REPORTE_CAJA", "REPORTE_INVENTARIO", "REPORTE_UTILIDAD",
+                "REPORTE_COMPRAS", "INVENTARIO_VER", "PEDIDO_VER", "PROVEEDOR_VER", "USUARIO_VER",
                 "ROL_VER", "CAJA_SUPERVISAR"],
-    "AUDITOR": ["VENTA_VER", "REPORTE_VENTAS", "REPORTE_CAJA", "REPORTE_INVENTARIO", "INVENTARIO_VER", "PEDIDO_VER", "PROVEEDOR_VER", "USUARIO_VER", "ROL_VER"],
+    "AUDITOR": ["VENTA_VER", "REPORTE_VENTAS", "REPORTE_CAJA", "REPORTE_INVENTARIO", "REPORTE_UTILIDAD",
+                "REPORTE_COMPRAS", "INVENTARIO_VER", "PEDIDO_VER", "PROVEEDOR_VER", "USUARIO_VER", "ROL_VER"],
     "VENDEDOR": ["VENTA_CREAR", "CLIENTE_CREAR", "CLIENTE_EDITAR"],
-    "CONTADOR": ["VENTA_VER", "REPORTE_VENTAS", "REPORTE_CAJA", "PEDIDO_VER", "PROVEEDOR_VER"],
+    "CONTADOR": ["VENTA_VER", "REPORTE_VENTAS", "REPORTE_CAJA", "REPORTE_UTILIDAD", "REPORTE_COMPRAS", "PEDIDO_VER", "PROVEEDOR_VER"],
 }
 
 
@@ -263,7 +268,7 @@ def fase1():
                                                 datetime.timedelta(days=dias_vence + random.randint(0, 20)))
             if descuento and nombre in PRODUCTOS_CON_DESCUENTO:
                 linea["fechaVencimiento"] = str(datetime.date.today() +
-                                                datetime.timedelta(days=9))
+                                                datetime.timedelta(days=6))
                 linea["porcentajeDescuentoVencimiento"] = 25
             lineas.append(linea)
         return ok("POST", f"/pedidos/{ped['id']}/recepciones",
@@ -323,6 +328,9 @@ def fase1():
         ok("POST", "/inventario/ajustes", {"depositoId": dep[0], "loteId": loteid,
                                            "stockReal": actual + (2 if k % 2 else -2), "motivo": motivo}, T)
     print("  3 entradas, 3 traslados, 3 salidas y 3 ajustes manuales")
+
+    paso("Reposiciones a costos mas altos")
+    compras_con_variacion()
     print("\nFase 1 lista. Siguiente: ejecutar usuarios.sql y luego `seed_dev.py 2`.")
 
 
@@ -451,11 +459,87 @@ def fase2():
     for usuario, caja in (("cajero1", cajas[0]), ("cajero2", cajas[1]), ("cajero3", cajas[4])):
         jornada(usuario, caja, cerrar=False, n_ventas=4, con_anulacion=False, con_devolucion=False, con_cambio=False)
 
+    paso("Ventas con precio manual (supervisor)")
+    precios_manuales()
+
     print("\nResumen:", estadisticas)
     print("\nFase 2 lista. Siguiente: ejecutar fechas.sql para repartir las fechas.")
 
 
+def compras_con_variacion():
+    """Reposiciones de los primeros productos a costos mas altos, para ver la evolucion del costo de compra."""
+    T = token_admin()
+    deposito = next(d["id"] for d in contenido(ok("GET", "/depositos?size=100", token=T)) if d["nombre"] == DEPOSITOS[0])
+    proveedores = [p["id"] for p in contenido(ok("GET", "/proveedores?estado=ACTIVO&size=100", token=T))]
+    por_nombre = {p["nombre"]: p["id"] for p in contenido(ok("GET", "/productos?size=100", token=T))}
+    datos = {n: (D(c), per) for _, n, _, c, per in PRODUCTOS}
+    # (cuantos de los primeros productos, factor de aumento, proveedor)
+    reposiciones = [(6, D("1.06"), proveedores[0]), (3, D("1.12"), proveedores[1]), (2, D("1.09"), proveedores[0])]
+    for cuantos, factor, proveedor in reposiciones:
+        nombres = [n for _, n, _, _, _ in PRODUCTOS][:cuantos]
+        pedido = ok("POST", "/pedidos", {
+            "proveedorId": proveedor, "depositoDestinoId": deposito, "fechaEntregaEstimada": None,
+            "observacion": f"Reposicion con aumento de costo ({factor})",
+            "items": [{"productoId": por_nombre[n], "cantidad": 40, "costoUnitario": q2(datos[n][0] * factor)}
+                      for n in nombres]}, T)
+        ok("POST", f"/pedidos/{pedido['id']}/enviar", token=T)
+        ped = ok("GET", f"/pedidos/{pedido['id']}", token=T)
+        items = []
+        for it in ped["items"]:
+            linea = {"lineaId": it["id"], "cantidad": it["cantidadPendiente"]}
+            if datos[it["producto"]["nombre"]][1]:
+                linea["fechaVencimiento"] = str(datetime.date.today() + datetime.timedelta(days=150))
+            items.append(linea)
+        ok("POST", f"/pedidos/{ped['id']}/recepciones", {"numeroGuia": f"G-{random.randint(1000, 9999)}",
+                                                         "observacion": "Reposicion", "items": items}, T)
+    print(f"  {len(reposiciones)} reposiciones recibidas con costos mas altos")
+
+
+def precios_manuales():
+    """Un supervisor abre un turno y hace ventas con precio manual (algunas bajo el costo), y lo cierra."""
+    token = login("supervisor1", PASS_FINAL)
+    if not token:
+        raise SystemExit("Falta el usuario supervisor1: ejecute usuarios.sql antes")
+    cajas = sorted(contenido(ok("GET", "/cajas?size=100", token=token)), key=lambda c: c["id"])
+    precios = {n: (q2(p), q2(c)) for _, n, p, c, _ in PRODUCTOS}
+    catalogo = []
+    for p in contenido(ok("GET", "/productos?size=100", token=token)):
+        base = next(x for x in contenido(ok("GET", f"/productos/{p['id']}/presentaciones", token=token))
+                    if x.get("esUnidadBase"))
+        catalogo.append((base["id"], p["nombre"]))
+
+    turno = None
+    for caja in cajas[2:]:
+        turno = intentar("POST", f"/cajas/{caja['id']}/turnos", {"montoApertura": 200}, token)
+        if turno:
+            break
+    if not turno:
+        raise SystemExit("No hay una caja libre para el turno del supervisor")
+
+    motivos = ["Producto golpeado", "Promocion de cierre", "Cliente frecuente", "Envase danado", "Liquidacion"]
+    hechas = bajo_costo = 0
+    for i in range(8):
+        pid, nombre = random.choice(catalogo)
+        lista, costo = precios[nombre]
+        es_bajo_costo = i % 3 == 0
+        precio = q2(costo * D("0.80")) if es_bajo_costo else q2(lista * D("0.85"))
+        cantidad = random.randint(1, 3)
+        venta = intentar("POST", "/ventas", {
+            "items": [{"presentacionId": pid, "cantidad": cantidad, "precioUnitario": precio,
+                       "motivoPrecio": random.choice(motivos)}],
+            "pagos": [{"metodoPagoId": next(m["id"] for m in contenido(ok("GET", "/metodos-pago?size=100", token=token))
+                                              if m["nombre"] == "EFECTIVO"), "monto": 500}]},
+            token, {"Idempotency-Key": str(uuid.uuid4())})
+        if venta:
+            hechas += 1
+            bajo_costo += 1 if es_bajo_costo else 0
+    esperado = D(str(ok("GET", f"/turnos/{turno['id']}", token=token)["efectivoEsperado"]))
+    ok("POST", f"/turnos/{turno['id']}/cerrar", {"montoDeclarado": esperado}, token)
+    print(f"  turno {turno['id']} de supervisor1: {hechas} ventas con precio manual ({bajo_costo} bajo el costo)")
+
+
 if __name__ == "__main__":
-    if len(sys.argv) != 2 or sys.argv[1] not in ("1", "2"):
+    if len(sys.argv) != 2 or sys.argv[1] not in ("1", "2", "precios-manuales", "compras-variacion"):
         raise SystemExit(__doc__)
-    {"1": fase1, "2": fase2}[sys.argv[1]]()
+    {"1": fase1, "2": fase2, "precios-manuales": precios_manuales,
+     "compras-variacion": compras_con_variacion}[sys.argv[1]]()
