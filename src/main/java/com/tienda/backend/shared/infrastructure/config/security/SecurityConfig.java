@@ -194,6 +194,8 @@ public class SecurityConfig {
 
                         // Reportes: cada familia con su permiso (se agregan a medida que existen)
                         .requestMatchers(HttpMethod.GET, "/api/v1/reportes/ventas/**").hasAuthority(REPORTE_VENTAS)
+                        .requestMatchers(HttpMethod.GET, "/api/v1/reportes/inventario/**").hasAuthority(REPORTE_INVENTARIO)
+                        .requestMatchers(HttpMethod.GET, "/api/v1/reportes/caja/**").hasAuthority(REPORTE_CAJA)
 
                         // Inventario: consultar con INVENTARIO_VER; registrar movimientos con INVENTARIO_MOVER
                         .requestMatchers(HttpMethod.GET, "/api/v1/inventario/**")

@@ -115,6 +115,8 @@ PRODUCTOS = [
 ]
 # Productos cuyo lote mas proximo a vencer lleva descuento (la venta los cobra siempre en efectivo en la semilla)
 PRODUCTOS_CON_DESCUENTO = {"Yogur Natural 1L", "Pan de Molde", "Helado Vainilla 1L"}
+# Productos con un minimo mayor que su stock, para que el reporte de stock bajo tenga filas
+PRODUCTOS_BAJO_MINIMO = {"Arroz 1kg", "Leche Entera 1L", "Detergente 1kg", "Alimento Perro 1kg", "Pasta Dental"}
 TIPOS_CLIENTE = ["MAYORISTA", "FRECUENTE", "VIP", "EMPLEADO", "EMPRESA", "ESTUDIANTE", "JUBILADO", "REVENDEDOR",
                  "INSTITUCION"]
 METODOS_PAGO = ["QR", "CHEQUE", "BILLETERA MOVIL", "VALE", "PUNTOS", "GIRO"]
@@ -137,19 +139,20 @@ ROLES = {
     "CAJERO": ["CAJA_ABRIR", "CAJA_CERRAR", "CAJA_MOVIMIENTO", "VENTA_CREAR", "VENTA_DEVOLVER"],
     "SUPERVISOR": ["CAJA_ABRIR", "CAJA_CERRAR", "CAJA_MOVIMIENTO", "CAJA_SUPERVISAR", "VENTA_VER", "VENTA_CREAR",
                    "VENTA_ANULAR", "VENTA_DEVOLVER", "VENTA_PRECIO_MODIFICAR", "VENTA_PRECIO_BAJO_COSTO",
-                   "REPORTE_VENTAS", "INVENTARIO_VER", "CLIENTE_CREAR", "CLIENTE_EDITAR"],
+                   "REPORTE_VENTAS", "REPORTE_CAJA", "REPORTE_INVENTARIO", "INVENTARIO_VER", "CLIENTE_CREAR",
+                   "CLIENTE_EDITAR"],
     "ENCARGADO_TURNO": ["CAJA_ABRIR", "CAJA_CERRAR", "CAJA_MOVIMIENTO", "CAJA_SUPERVISAR", "VENTA_CREAR", "VENTA_VER",
                         "VENTA_ANULAR", "VENTA_DEVOLVER"],
     "ALMACENERO": ["INVENTARIO_VER", "INVENTARIO_MOVER", "CATALOGO_CREAR", "CATALOGO_EDITAR", "DEPOSITO_CREAR",
-                   "DEPOSITO_EDITAR", "PEDIDO_VER", "PEDIDO_RECIBIR"],
+                   "DEPOSITO_EDITAR", "PEDIDO_VER", "PEDIDO_RECIBIR", "REPORTE_INVENTARIO"],
     "COMPRADOR": ["PROVEEDOR_VER", "PROVEEDOR_CREAR", "PROVEEDOR_EDITAR", "PROVEEDOR_ACTIVAR", "PEDIDO_VER",
                   "PEDIDO_CREAR", "PEDIDO_EDITAR", "PEDIDO_ELIMINAR", "PEDIDO_ENVIAR", "PEDIDO_CANCELAR",
                   "PEDIDO_RECIBIR", "INVENTARIO_VER"],
-    "GERENTE": ["VENTA_VER", "REPORTE_VENTAS", "INVENTARIO_VER", "PEDIDO_VER", "PROVEEDOR_VER", "USUARIO_VER",
+    "GERENTE": ["VENTA_VER", "REPORTE_VENTAS", "REPORTE_CAJA", "REPORTE_INVENTARIO", "INVENTARIO_VER", "PEDIDO_VER", "PROVEEDOR_VER", "USUARIO_VER",
                 "ROL_VER", "CAJA_SUPERVISAR"],
-    "AUDITOR": ["VENTA_VER", "REPORTE_VENTAS", "INVENTARIO_VER", "PEDIDO_VER", "PROVEEDOR_VER", "USUARIO_VER", "ROL_VER"],
+    "AUDITOR": ["VENTA_VER", "REPORTE_VENTAS", "REPORTE_CAJA", "REPORTE_INVENTARIO", "INVENTARIO_VER", "PEDIDO_VER", "PROVEEDOR_VER", "USUARIO_VER", "ROL_VER"],
     "VENDEDOR": ["VENTA_CREAR", "CLIENTE_CREAR", "CLIENTE_EDITAR"],
-    "CONTADOR": ["VENTA_VER", "REPORTE_VENTAS", "PEDIDO_VER", "PROVEEDOR_VER"],
+    "CONTADOR": ["VENTA_VER", "REPORTE_VENTAS", "REPORTE_CAJA", "PEDIDO_VER", "PROVEEDOR_VER"],
 }
 
 
@@ -200,7 +203,8 @@ def fase1():
     productos = []   # {id, nombre, precio, costo, perecedero, base}
     for i, (c, nombre, precio, costo, perecedero) in enumerate(PRODUCTOS, start=1):
         p = ok("POST", "/productos", {"nombre": nombre, "descripcion": f"{nombre} ({c})", "categoriaId": cat[c],
-                                      "stockMinimo": random.choice([10, 15, 20, 30]), "esPerecedero": perecedero}, T)
+                                      "stockMinimo": 1000 if nombre in PRODUCTOS_BAJO_MINIMO else random.choice([10, 15, 20, 30]),
+                                      "esPerecedero": perecedero}, T)
         base = ok("POST", f"/productos/{p['id']}/presentaciones", {
             "unidadMedidaId": uni["Unidad"], "codigoBarras": f"7790{p['id']:08d}", "factorConversion": 1,
             "esUnidadBase": True}, T)

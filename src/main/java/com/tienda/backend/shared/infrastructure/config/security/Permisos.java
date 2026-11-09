@@ -84,6 +84,8 @@ public final class Permisos {
 
     // Reportes
     public static final String REPORTE_VENTAS = "REPORTE_VENTAS";
+    public static final String REPORTE_INVENTARIO = "REPORTE_INVENTARIO";
+    public static final String REPORTE_CAJA = "REPORTE_CAJA";
 
     // Ventas, devoluciones y cambios
     public static final String VENTA_VER = "VENTA_VER";
