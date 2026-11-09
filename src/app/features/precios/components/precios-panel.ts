@@ -3,6 +3,8 @@ import { Component, effect, inject, input, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { errorMessage } from '../../../core/api/api-error';
 import { isActivo } from '../../../core/api/estado';
+import { AuthService } from '../../../core/auth/auth.service';
+import { MODULOS } from '../../../core/auth/permisos';
 import { Badge } from '../../../shared/ui/badge';
 import { Btn, IconBtn } from '../../../shared/ui/button';
 import { ConfirmDialog } from '../../../shared/ui/confirm-dialog';
@@ -19,7 +21,7 @@ import { PreciosService } from '../data/precios.service';
   template: `
     <div class="flex items-center justify-between">
       <p class="text-xs font-semibold uppercase tracking-wide text-muted">Precios</p>
-      @if (!formOpen()) {
+      @if (!formOpen() && puede.crear) {
         <button appBtn variant="secondary" icon="plus" class="!h-8 !px-3 !text-xs" (click)="openForm(null)">Agregar precio</button>
       }
     </div>
@@ -65,10 +67,10 @@ import { PreciosService } from '../data/precios.service';
             </span>
             <span class="font-semibold text-ink">{{ p.precio | number: '1.2-4' }}</span>
             <span class="flex items-center gap-1">
-              <app-toggle [checked]="isActivo(p.estado)" [disabled]="togglingId() === p.id"
+              <app-toggle [checked]="isActivo(p.estado)" [disabled]="togglingId() === p.id || !puede.activar"
                 label="Cambiar estado del precio" (checkedChange)="toggle(p, $event)" />
-              <button appIconBtn icon="edit" label="Editar precio" (click)="openForm(p)"></button>
-              <button appIconBtn icon="trash" danger label="Eliminar precio" (click)="toDelete.set(p)"></button>
+              @if (puede.editar) { <button appIconBtn icon="edit" label="Editar precio" (click)="openForm(p)"></button> }
+              @if (puede.eliminar) { <button appIconBtn icon="trash" danger label="Eliminar precio" (click)="toDelete.set(p)"></button> }
             </span>
           </li>
         }
@@ -108,6 +110,7 @@ export class PreciosPanel {
   private readonly fb = inject(FormBuilder).nonNullable;
   protected readonly isActivo = isActivo;
 
+  protected readonly puede = inject(AuthService).crud(MODULOS.precio);
   readonly presentacionId = input.required<number>();
   readonly tipos = input<TipoCliente[]>([]);
 
