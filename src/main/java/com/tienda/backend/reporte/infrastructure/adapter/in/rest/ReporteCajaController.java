@@ -3,7 +3,6 @@ package com.tienda.backend.reporte.infrastructure.adapter.in.rest;
 import com.tienda.backend.reporte.application.model.AgrupacionDiferencias;
 import com.tienda.backend.reporte.application.model.FilasCaja;
 import com.tienda.backend.reporte.application.model.RangoFechas;
-import com.tienda.backend.reporte.application.model.ReporteResultado;
 import com.tienda.backend.reporte.application.port.in.ConsultarReporteCajaUseCase;
 import com.tienda.backend.reporte.domain.exception.ReporteParametrosInvalidosException;
 import lombok.RequiredArgsConstructor;
@@ -36,7 +35,7 @@ public class ReporteCajaController {
             @RequestParam(required = false) Long usuarioId,
             @RequestParam(required = false) String estado,
             @RequestParam(required = false) String formato) {
-        return responder(consultarReporteCajaUseCase.cierres(RangoFechas.de(desde, hasta), cajaId, usuarioId, estado),
+        return RespuestaReporte.de(consultarReporteCajaUseCase.cierres(RangoFechas.de(desde, hasta), cajaId, usuarioId, estado),
                 formato, "cierres-de-caja", FilasCaja.Cierre.class);
     }
 
@@ -59,22 +58,11 @@ public class ReporteCajaController {
         }
         RangoFechas rango = RangoFechas.de(desde, hasta);
         if (agrupacion == AgrupacionDiferencias.TURNO) {
-            return responder(consultarReporteCajaUseCase.diferenciasPorTurno(rango, cajaId, usuarioId), formato,
+            return RespuestaReporte.de(consultarReporteCajaUseCase.diferenciasPorTurno(rango, cajaId, usuarioId), formato,
                     "diferencias-de-caja", FilasCaja.Cierre.class);
         }
-        return responder(consultarReporteCajaUseCase.diferenciasResumen(rango, agrupacion == AgrupacionDiferencias.CAJERO,
+        return RespuestaReporte.de(consultarReporteCajaUseCase.diferenciasResumen(rango, agrupacion == AgrupacionDiferencias.CAJERO,
                 cajaId, usuarioId), formato, "diferencias-por-" + agrupacion.name().toLowerCase(Locale.ROOT),
                 FilasCaja.Diferencias.class);
-    }
-
-    private static <F extends Record> ResponseEntity<?> responder(ReporteResultado<F> resultado, String formato,
-                                                                   String nombreArchivo, Class<F> tipo) {
-        String f = formato == null ? "json" : formato.trim().toLowerCase(Locale.ROOT);
-        return switch (f) {
-            case "json", "" -> ResponseEntity.ok(resultado);
-            case "csv" -> CsvSupport.respuesta(nombreArchivo + "-" + resultado.desde() + "_" + resultado.hasta(),
-                    resultado.filas(), tipo);
-            default -> throw new ReporteParametrosInvalidosException("El formato debe ser json o csv");
-        };
     }
 }

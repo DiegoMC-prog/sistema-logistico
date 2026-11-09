@@ -35,7 +35,7 @@ public class ReporteVentasController {
             @RequestParam(required = false) Agrupacion agrupacion,
             @RequestParam(required = false) String formato) {
         ReporteResultado<FilasVentas.Periodo> r = consultarReporteVentasUseCase.resumen(RangoFechas.de(desde, hasta), agrupacion);
-        return responder(r, formato, "ventas-resumen", FilasVentas.Periodo.class);
+        return RespuestaReporte.de(r, formato, "ventas-resumen", FilasVentas.Periodo.class);
     }
 
     @GetMapping("/por-producto")
@@ -47,7 +47,7 @@ public class ReporteVentasController {
             @RequestParam(required = false) String formato) {
         ReporteResultado<FilasVentas.Producto> r = consultarReporteVentasUseCase.porProducto(
                 RangoFechas.de(desde, hasta), categoriaId, limite);
-        return responder(r, formato, "ventas-por-producto", FilasVentas.Producto.class);
+        return RespuestaReporte.de(r, formato, "ventas-por-producto", FilasVentas.Producto.class);
     }
 
     @GetMapping("/productos-sin-ventas")
@@ -59,7 +59,7 @@ public class ReporteVentasController {
             @RequestParam(required = false) String formato) {
         ReporteResultado<FilasVentas.ProductoSinVentas> r = consultarReporteVentasUseCase.productosSinVentas(
                 RangoFechas.de(desde, hasta), categoriaId, limite);
-        return responder(r, formato, "productos-sin-ventas", FilasVentas.ProductoSinVentas.class);
+        return RespuestaReporte.de(r, formato, "productos-sin-ventas", FilasVentas.ProductoSinVentas.class);
     }
 
     @GetMapping("/por-cajero")
@@ -68,7 +68,7 @@ public class ReporteVentasController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate hasta,
             @RequestParam(required = false) String formato) {
         ReporteResultado<FilasVentas.Origen> r = consultarReporteVentasUseCase.porCajero(RangoFechas.de(desde, hasta));
-        return responder(r, formato, "ventas-por-cajero", FilasVentas.Origen.class);
+        return RespuestaReporte.de(r, formato, "ventas-por-cajero", FilasVentas.Origen.class);
     }
 
     @GetMapping("/por-caja")
@@ -77,7 +77,7 @@ public class ReporteVentasController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate hasta,
             @RequestParam(required = false) String formato) {
         ReporteResultado<FilasVentas.Origen> r = consultarReporteVentasUseCase.porCaja(RangoFechas.de(desde, hasta));
-        return responder(r, formato, "ventas-por-caja", FilasVentas.Origen.class);
+        return RespuestaReporte.de(r, formato, "ventas-por-caja", FilasVentas.Origen.class);
     }
 
     @GetMapping("/por-metodo-pago")
@@ -86,7 +86,7 @@ public class ReporteVentasController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate hasta,
             @RequestParam(required = false) String formato) {
         ReporteResultado<FilasVentas.MetodoPago> r = consultarReporteVentasUseCase.porMetodoPago(RangoFechas.de(desde, hasta));
-        return responder(r, formato, "ventas-por-metodo-pago", FilasVentas.MetodoPago.class);
+        return RespuestaReporte.de(r, formato, "ventas-por-metodo-pago", FilasVentas.MetodoPago.class);
     }
 
     /** {@code agrupar=CLIENTE} (por defecto) o {@code TIPO}. */
@@ -107,7 +107,7 @@ public class ReporteVentasController {
         }
         ReporteResultado<FilasVentas.Cliente> r = consultarReporteVentasUseCase.porCliente(
                 RangoFechas.de(desde, hasta), porTipo, limite);
-        return responder(r, formato, "ventas-por-cliente", FilasVentas.Cliente.class);
+        return RespuestaReporte.de(r, formato, "ventas-por-cliente", FilasVentas.Cliente.class);
     }
 
     @GetMapping("/anulaciones-devoluciones")
@@ -118,17 +118,6 @@ public class ReporteVentasController {
             @RequestParam(required = false) String formato) {
         ReporteResultado<FilasVentas.Incidencia> r = consultarReporteVentasUseCase.incidencias(
                 RangoFechas.de(desde, hasta), limite);
-        return responder(r, formato, "anulaciones-devoluciones", FilasVentas.Incidencia.class);
-    }
-
-    private static <F extends Record> ResponseEntity<?> responder(ReporteResultado<F> resultado, String formato,
-                                                                   String nombreArchivo, Class<F> tipo) {
-        String f = formato == null ? "json" : formato.trim().toLowerCase(Locale.ROOT);
-        return switch (f) {
-            case "json", "" -> ResponseEntity.ok(resultado);
-            case "csv" -> CsvSupport.respuesta(nombreArchivo + "-" + resultado.desde() + "_" + resultado.hasta(),
-                    resultado.filas(), tipo);
-            default -> throw new ReporteParametrosInvalidosException("El formato debe ser json o csv");
-        };
+        return RespuestaReporte.de(r, formato, "anulaciones-devoluciones", FilasVentas.Incidencia.class);
     }
 }
