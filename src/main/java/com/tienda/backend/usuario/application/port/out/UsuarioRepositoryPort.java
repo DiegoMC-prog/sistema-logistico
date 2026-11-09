@@ -15,6 +15,7 @@ public interface UsuarioRepositoryPort {
     Optional<Usuario> findById(Long id);
     List<Usuario> findAllById(Collection<Long> ids);
     Optional<Usuario> findByUsername(String username);
+    Optional<Usuario> findByEmail(String email);
     List<Long> findUsuarioIdsByRolId(Long rolId);
     PageResult<Usuario> findAll(UsuarioFiltro filtro, int page, int size);
     void deleteById(Long id);

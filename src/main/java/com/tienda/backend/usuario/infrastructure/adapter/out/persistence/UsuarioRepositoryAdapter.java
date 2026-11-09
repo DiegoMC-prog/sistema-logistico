@@ -74,6 +74,11 @@ public class UsuarioRepositoryAdapter implements UsuarioRepositoryPort {
     }
 
     @Override
+    public Optional<Usuario> findByEmail(String email) {
+        return usuarioJpaRepository.findByEmailIgnoreCase(email).map(mapper::toDomain);
+    }
+
+    @Override
     public boolean existsByEmail(String email) {
         return usuarioJpaRepository.existsByEmailIgnoreCase(email);
     }
