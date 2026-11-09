@@ -52,7 +52,7 @@ import { TurnosService } from '../data/turnos.service';
           <app-stat-card label="Ingresos" tone="success" [value]="(t.ingresos | number: '1.2-2')" />
           <app-stat-card label="Egresos" tone="muted" [value]="(t.egresos | number: '1.2-2')" />
           <app-stat-card label="Efectivo esperado" [value]="(t.efectivoEsperado | number: '1.2-2')"
-            hint="Apertura + ingresos − egresos + cobrado en efectivo − reembolsos en efectivo" />
+            hint="Apertura + ingresos − egresos + cobrado en efectivo + abonos en efectivo − reembolsos en efectivo" />
         </div>
 
         @if (t.estado === 'CERRADO') {
@@ -86,6 +86,7 @@ import { TurnosService } from '../data/turnos.service';
             }
             <dl class="mt-4 space-y-1 border-t border-border pt-3 text-sm">
               <div class="flex justify-between"><dt class="text-muted">Efectivo cobrado</dt><dd>{{ t.efectivoCobrado | number: '1.2-2' }}</dd></div>
+              <div class="flex justify-between"><dt class="text-muted">Abonos de crédito en efectivo</dt><dd>{{ t.abonosEfectivo | number: '1.2-2' }}</dd></div>
               <div class="flex justify-between"><dt class="text-muted">Reembolsos en efectivo</dt><dd>{{ t.reembolsosEfectivo | number: '1.2-2' }}</dd></div>
             </dl>
           </app-card>

@@ -16,9 +16,9 @@ export interface MetodoPagoFilters extends PageParams {
   estado?: Estado;
 }
 
-/** `EFECTIVO` y `CREDITO_DEVOLUCION` son de sistema. */
+/** `EFECTIVO`, `CREDITO` (fiado) y `CREDITO_DEVOLUCION` son de sistema. */
 export const esMetodoSistema = (m: { nombre: string }): boolean =>
-  m.nombre === 'EFECTIVO' || m.nombre === 'CREDITO_DEVOLUCION';
+  m.nombre === 'EFECTIVO' || m.nombre === 'CREDITO' || m.nombre === 'CREDITO_DEVOLUCION';
 
 /** Métodos que se pueden ofrecer al cobrar o reembolsar. */
 export const esUtilizable = (m: MetodoPago): boolean => m.paraCobro && m.estado === 'ACTIVO';

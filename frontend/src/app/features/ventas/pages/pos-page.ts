@@ -133,6 +133,11 @@ interface PagoFila {
                 <span><strong class="text-ink">{{ c.nombre }}</strong> <span class="text-muted">· {{ c.tipoCliente.nombre }}</span></span>
                 <button type="button" class="text-xs text-accent hover:underline" (click)="elegirCliente(null)">Quitar</button>
               </div>
+              @if (c.creditoHabilitado) {
+                <p class="text-xs text-muted">Crédito habilitado · límite {{ c.limiteCredito | number: '1.2-2' }}. Puedes cobrar todo o parte con «CRÉDITO (fiado)».</p>
+              } @else {
+                <p class="text-xs text-muted">Este cliente no tiene crédito habilitado.</p>
+              }
             } @else {
               <app-search-input class="!max-w-none" placeholder="Buscar cliente (opcional)…" (searched)="buscarCliente($event)" />
               @if (clientes().length > 0) {
@@ -165,11 +170,11 @@ interface PagoFila {
                 <div class="grid grid-cols-[1fr_6rem_auto] items-center gap-2">
                   <select class="field-input !h-9" [ngModel]="p.metodoPagoId" (ngModelChange)="patchPago($index, { metodoPagoId: $event })">
                     <option [ngValue]="null" disabled>Método</option>
-                    @for (m of metodos(); track m.id) { <option [ngValue]="m.id">{{ m.nombre }}</option> }
+                    @for (m of metodosDisponibles(); track m.id) { <option [ngValue]="m.id">{{ m.nombre === 'CREDITO' ? 'CRÉDITO (fiado)' : m.nombre }}</option> }
                   </select>
                   <input type="number" min="0" step="0.01" class="field-input !h-9 text-right" [ngModel]="p.monto" (ngModelChange)="patchPago($index, { monto: +$event })" />
                   <button appIconBtn icon="close" label="Quitar pago" (click)="quitarPago($index)"></button>
-                  @if (p.metodoPagoId !== efectivoId()) {
+                  @if (p.metodoPagoId !== efectivoId() && p.metodoPagoId !== creditoId()) {
                     <input class="field-input !h-8 col-span-3 text-xs" placeholder="Referencia (opcional)" [ngModel]="p.referencia" (ngModelChange)="patchPago($index, { referencia: $event })" />
                   }
                 </div>
@@ -235,6 +240,11 @@ export class PosPage {
   protected readonly cobrando = signal(false);
   protected readonly nota = signal<Venta | null>(null);
 
+  protected readonly creditoId = computed(() => this.metodos().find((m) => m.nombre === 'CREDITO')?.id ?? null);
+  /** CRÉDITO solo se ofrece con un cliente que tenga el crédito habilitado. */
+  protected readonly metodosDisponibles = computed(() =>
+    this.metodos().filter((m) => m.nombre !== 'CREDITO' || this.cliente()?.creditoHabilitado === true),
+  );
   protected readonly efectivoId = computed(() => this.metodos().find((m) => m.nombre === 'EFECTIVO')?.id ?? null);
   protected readonly total = computed(() => round2(this.lineas().reduce((s, l) => s + this.subtotal(l), 0)));
   private readonly pagado = computed(() => round2(this.pagos().reduce((s, p) => s + (p.monto || 0), 0)));
@@ -367,6 +377,7 @@ export class PosPage {
   protected elegirCliente(c: Cliente | null): void {
     this.cliente.set(c);
     this.clientes.set([]);
+    if (!c?.creditoHabilitado) this.pagos.update((ps) => ps.filter((p) => p.metodoPagoId !== this.creditoId()));
     // El tipo de cliente cambia el precio aplicable de todas las líneas.
     this.lineas.update((ls) => ls.map((l) => ({ ...l, cargando: true })));
     this.lineas().forEach((l) => this.cargarPrecio(l.uid));
@@ -376,7 +387,7 @@ export class PosPage {
 
   protected agregarPago(): void {
     const usados = new Set(this.pagos().map((p) => p.metodoPagoId));
-    const libre = this.metodos().find((m) => !usados.has(m.id));
+    const libre = this.metodosDisponibles().find((m) => !usados.has(m.id));
     this.pagos.update((ps) => [...ps, { metodoPagoId: libre?.id ?? null, monto: this.faltante(), referencia: '' }]);
   }
 

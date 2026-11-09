@@ -9,6 +9,8 @@ export interface Cliente {
   telefono: string | null;
   email: string | null;
   estado: Estado;
+  creditoHabilitado: boolean;
+  limiteCredito: number;
 }
 
 export interface ClienteRequest {
@@ -17,6 +19,8 @@ export interface ClienteRequest {
   nombre: string;
   telefono?: string;
   email?: string;
+  creditoHabilitado?: boolean;
+  limiteCredito?: number;
 }
 
 export interface ClienteFilters extends PageParams {

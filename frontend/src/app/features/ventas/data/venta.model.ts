@@ -87,7 +87,8 @@ export interface VentaFilters extends PageParams {
 }
 
 /** Una venta pagada solo con crédito de devolución se muestra con este nombre. */
-export const nombreMetodo = (n: string): string => (n === 'CREDITO_DEVOLUCION' ? 'Crédito por devolución' : n);
+export const nombreMetodo = (n: string): string =>
+  n === 'CREDITO_DEVOLUCION' ? 'Crédito por devolución' : n === 'CREDITO' ? 'A crédito (fiado)' : n;
 
 /** Redondeo a 2 decimales (solo vista previa: el servidor es la fuente). */
 export const round2 = (n: number): number => Math.round((n + Number.EPSILON) * 100) / 100;

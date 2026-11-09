@@ -104,6 +104,11 @@ export const routes: Routes = [
         loadChildren: () => import('./features/clientes/clientes.routes').then((m) => m.CLIENTES_ROUTES),
       },
       {
+        path: 'creditos',
+        canActivate: [permissionGuard(PERMISOS.creditoGestionar)],
+        loadChildren: () => import('./features/creditos/creditos.routes').then((m) => m.CREDITOS_ROUTES),
+      },
+      {
         path: 'tipos-cliente',
         canActivate: [permissionGuard(todosDe(MODULOS.cliente))],
         loadChildren: () => import('./features/tipos-cliente/tipos-cliente.routes').then((m) => m.TIPOS_CLIENTE_ROUTES),

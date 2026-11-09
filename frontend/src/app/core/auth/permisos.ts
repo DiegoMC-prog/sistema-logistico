@@ -85,6 +85,8 @@ export const PERMISOS = {
   pedidoCancelar: 'PEDIDO_CANCELAR',
   pedidoRecibir: 'PEDIDO_RECIBIR',
 
+  creditoGestionar: 'CREDITO_GESTIONAR',
+
   reporteVentas: 'REPORTE_VENTAS',
   reporteCaja: 'REPORTE_CAJA',
   reporteInventario: 'REPORTE_INVENTARIO',

@@ -59,6 +59,7 @@ export const NAV_SECTIONS: readonly NavSection[] = [
     items: [
       { label: 'Clientes', path: '/clientes', icon: 'user', permiso: todosDe(MODULOS.cliente) },
       { label: 'Tipos de cliente', path: '/tipos-cliente', icon: 'tag', permiso: todosDe(MODULOS.cliente) },
+      { label: 'Créditos', path: '/creditos', icon: 'dollar', permiso: PERMISOS.creditoGestionar },
     ],
   },
   {

@@ -98,6 +98,7 @@ const CIERRE_COLS: Col[] = [
   { key: 'otrosMetodos', label: 'Otros métodos', tipo: 'dinero' },
   { key: 'ingresos', label: 'Ingresos', tipo: 'dinero' },
   { key: 'egresos', label: 'Egresos', tipo: 'dinero' },
+  { key: 'abonosEfectivo', label: 'Abonos en efectivo', tipo: 'dinero' },
   { key: 'reembolsosEfectivo', label: 'Reembolsos efectivo', tipo: 'dinero' },
   { key: 'efectivoEsperado', label: 'Esperado', tipo: 'dinero' },
   { key: 'efectivoDeclarado', label: 'Declarado', tipo: 'dinero' },
@@ -213,7 +214,7 @@ export const FAMILIAS: FamiliaDef[] = [
       {
         id: 'cierres', titulo: 'Cierres de caja', path: 'cierres', rango: true,
         filtros: [CAJA, { key: 'estado', label: 'Estado', tipo: 'select', opciones: [{ value: '', label: 'Todos' }, { value: 'ABIERTO', label: 'Abiertos' }, { value: 'CERRADO', label: 'Cerrados' }] }],
-        descripcion: 'El cuadre de cada turno. Esperado = apertura + ingresos − egresos + efectivo cobrado − reembolsos en efectivo. Diferencia = declarado − esperado.',
+        descripcion: 'El cuadre de cada turno. Esperado = apertura + ingresos − egresos + efectivo cobrado + abonos de crédito en efectivo − reembolsos en efectivo. Diferencia = declarado − esperado.',
         totales: [
           { key: 'turnos', label: 'Turnos', tipo: 'entero' }, { key: 'turnosAbiertos', label: 'Abiertos', tipo: 'entero' },
           { key: 'totalVentas', label: 'Total ventas', tipo: 'dinero' }, { key: 'ventasEfectivo', label: 'En efectivo', tipo: 'dinero' },

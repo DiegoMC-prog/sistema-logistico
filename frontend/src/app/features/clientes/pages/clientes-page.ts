@@ -1,10 +1,12 @@
+import { DecimalPipe } from '@angular/common';
 import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Router } from '@angular/router';
 import { errorMessage } from '../../../core/api/api-error';
 import { EstadoCounts, estadoCounts, isActivo } from '../../../core/api/estado';
 import { PagedList } from '../../../core/api/paged-list';
 import { AuthService } from '../../../core/auth/auth.service';
-import { MODULOS } from '../../../core/auth/permisos';
+import { MODULOS, PERMISOS } from '../../../core/auth/permisos';
 import { Badge } from '../../../shared/ui/badge';
 import { Btn, IconBtn } from '../../../shared/ui/button';
 import { Card } from '../../../shared/ui/card';
@@ -25,7 +27,7 @@ import { ClientesService } from '../data/clientes.service';
 
 @Component({
   selector: 'app-clientes-page',
-  imports: [ReactiveFormsModule, TableSkeleton, FilterSelect, Badge, Btn, IconBtn, Card, ConfirmDialog, EmptyState, Field, Modal, Paginator, SearchInput, StatCard, Toggle],
+  imports: [DecimalPipe, ReactiveFormsModule, TableSkeleton, FilterSelect, Badge, Btn, IconBtn, Card, ConfirmDialog, EmptyState, Field, Modal, Paginator, SearchInput, StatCard, Toggle],
   template: `
     <div class="space-y-6">
       <div class="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
@@ -74,7 +76,7 @@ import { ClientesService } from '../data/clientes.service';
           } @else {
             <div class="overflow-x-auto">
               <table class="dt">
-                <thead><tr><th>Cliente</th><th>Tipo</th><th>Contacto</th><th>Estado</th><th class="text-right">Acciones</th></tr></thead>
+                <thead><tr><th>Cliente</th><th>Tipo</th><th>Contacto</th><th>Crédito</th><th>Estado</th><th class="text-right">Acciones</th></tr></thead>
                 <tbody>
                   @for (c of d.content; track c.id) {
                     <tr>
@@ -87,6 +89,13 @@ import { ClientesService } from '../data/clientes.service';
                         <p>{{ c.telefono || '—' }}</p>
                         <p>{{ c.email || '—' }}</p>
                       </td>
+                      <td class="text-sm">
+                        @if (c.creditoHabilitado) {
+                          <app-badge tone="success">Hasta {{ c.limiteCredito | number: '1.2-2' }}</app-badge>
+                        } @else {
+                          <span class="text-muted">—</span>
+                        }
+                      </td>
                       <td>
                         <div class="flex items-center gap-3">
                           <app-toggle [checked]="isActivo(c.estado)" [disabled]="togglingId() === c.id || !puede.activar"
@@ -96,6 +105,7 @@ import { ClientesService } from '../data/clientes.service';
                       </td>
                       <td>
                         <div class="flex justify-end">
+                          @if (c.creditoHabilitado && puedeCredito) { <button appIconBtn icon="dollar" [label]="'Estado de cuenta de ' + c.nombre" (click)="verCuenta(c)"></button> }
                           @if (puede.editar) { <button appIconBtn icon="edit" [label]="'Editar ' + c.nombre" (click)="openForm(c)"></button> }
                           @if (puede.eliminar) { <button appIconBtn icon="trash" danger [label]="'Eliminar ' + c.nombre" (click)="toDelete.set(c)"></button> }
                         </div>
@@ -136,6 +146,17 @@ import { ClientesService } from '../data/clientes.service';
             <app-field label="Correo electrónico" [control]="form.controls.email" optional>
               <input type="email" class="field-input" formControlName="email" />
             </app-field>
+            <div class="sm:col-span-2 rounded-lg border border-border p-3">
+              <label class="flex items-center gap-2 text-sm font-medium text-ink">
+                <input type="checkbox" formControlName="creditoHabilitado" /> Permitir compras a crédito (fiado)
+              </label>
+              @if (form.controls.creditoHabilitado.value) {
+                <app-field class="mt-3 block" label="Límite de crédito" [control]="form.controls.limiteCredito" required
+                  helper="Máximo que el cliente puede deber en total">
+                  <input type="number" min="0" step="0.01" class="field-input" formControlName="limiteCredito" />
+                </app-field>
+              }
+            </div>
           </div>
         </form>
         <ng-container modal-footer>
@@ -159,7 +180,10 @@ export class ClientesPage {
   private readonly fb = inject(FormBuilder).nonNullable;
   protected readonly isActivo = isActivo;
 
-  protected readonly puede = inject(AuthService).crud(MODULOS.cliente);
+  private readonly auth = inject(AuthService);
+  protected readonly puede = this.auth.crud(MODULOS.cliente);
+  protected readonly puedeCredito = this.auth.hasAnyPermission(PERMISOS.creditoGestionar);
+  private readonly router = inject(Router);
   protected readonly list = new PagedList<Cliente, ClienteFilters>((f) => this.service.list(f));
   protected readonly counts = signal<EstadoCounts | null>(null);
   protected readonly tipos = signal<TipoCliente[]>([]);
@@ -180,11 +204,17 @@ export class ClientesPage {
     tipoClienteId: [null as number | null],
     telefono: ['', Validators.maxLength(30)],
     email: ['', [Validators.email, Validators.maxLength(150)]],
+    creditoHabilitado: [false],
+    limiteCredito: [0, [Validators.min(0)]],
   });
 
   constructor() {
     this.loadCounts();
     this.tiposService.list({ size: 100 }).subscribe({ next: (p) => this.tipos.set(p.content) });
+  }
+
+  protected verCuenta(c: Cliente): void {
+    this.router.navigate(['/creditos', c.id]);
   }
 
   /** Tipos asignables: activos (más el actual del cliente que se edita, aunque esté inactivo). */
@@ -206,6 +236,8 @@ export class ClientesPage {
       tipoClienteId: c?.tipoCliente.id ?? null,
       telefono: c?.telefono ?? '',
       email: c?.email ?? '',
+      creditoHabilitado: c?.creditoHabilitado ?? false,
+      limiteCredito: c?.limiteCredito ?? 0,
     });
     this.formOpen.set(true);
   }
@@ -213,12 +245,18 @@ export class ClientesPage {
   protected save(): void {
     if (this.form.invalid) return this.form.markAllAsTouched();
     const v = this.form.getRawValue();
+    if (v.creditoHabilitado && !(v.limiteCredito > 0)) {
+      this.form.controls.limiteCredito.setErrors({ min: true });
+      return this.form.markAllAsTouched();
+    }
     const body = {
       nombre: v.nombre.trim(),
       documento: v.documento.trim() || undefined,
       tipoClienteId: v.tipoClienteId ?? undefined,
       telefono: v.telefono.trim() || undefined,
       email: v.email.trim() || undefined,
+      creditoHabilitado: v.creditoHabilitado,
+      limiteCredito: v.creditoHabilitado ? Number(v.limiteCredito) : 0,
     };
     const current = this.editing();
     this.saving.set(true);

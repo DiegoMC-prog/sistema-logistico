@@ -36,6 +36,8 @@ export interface Turno {
   cobrosPorMetodo: CobroMetodo[];
   efectivoCobrado: number;
   reembolsosEfectivo: number;
+  /** Abonos de deudas de crédito cobrados en efectivo durante el turno. */
+  abonosEfectivo: number;
   efectivoEsperado: number;
   fechaCierre: string | null;
   montoCierreDeclarado: number | null;
