@@ -10,9 +10,11 @@ import com.tienda.backend.lote.application.port.in.EliminarLoteUseCase;
 import com.tienda.backend.lote.application.port.in.ListarLoteUseCase;
 import com.tienda.backend.lote.application.port.in.ObtenerLoteUseCase;
 import com.tienda.backend.lote.application.port.out.GeneradorNumeroLotePort;
+import com.tienda.backend.lote.application.port.out.InventarioConsultaPort;
 import com.tienda.backend.lote.application.port.out.LoteRepositoryPort;
 import com.tienda.backend.lote.application.port.out.PresentacionConsultaPort;
 import com.tienda.backend.lote.application.port.out.ProductoConsultaPort;
+import com.tienda.backend.lote.domain.exception.LoteConStockException;
 import com.tienda.backend.lote.domain.exception.LoteDatosInvalidosException;
 import com.tienda.backend.lote.domain.exception.LoteNotFoundException;
 import com.tienda.backend.lote.domain.exception.LoteNumeroDuplicadoException;
@@ -36,6 +38,7 @@ public class LoteService implements CrearLoteUseCase, EditarLoteUseCase, ListarL
     private final ProductoConsultaPort productoConsultaPort;
     private final PresentacionConsultaPort presentacionConsultaPort;
     private final GeneradorNumeroLotePort generadorNumeroLotePort;
+    private final InventarioConsultaPort inventarioConsultaPort;
 
     @Override
     @Transactional
@@ -99,6 +102,9 @@ public class LoteService implements CrearLoteUseCase, EditarLoteUseCase, ListarL
     @Transactional
     public void eliminar(Long id) {
         buscar(id);
+        if (inventarioConsultaPort.tieneStock(id)) {
+            throw new LoteConStockException();
+        }
         loteRepositoryPort.deleteById(id);
     }
 

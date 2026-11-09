@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Collection;
 import java.util.Optional;
 
 @Repository
@@ -29,6 +30,13 @@ public class PresentacionRepositoryAdapter implements PresentacionRepositoryPort
     @Override
     public List<PresentacionDetalle> findDetalleByProductoId(Long productoId) {
         return presentacionJpaRepository.findByProductoIdOrderByEsUnidadBaseDescIdAsc(productoId).stream()
+                .map(mapper::toDetalle)
+                .toList();
+    }
+
+    @Override
+    public List<PresentacionDetalle> findBasesDetalleByProductoIds(Collection<Long> productoIds) {
+        return presentacionJpaRepository.findByProductoIdInAndEsUnidadBaseTrue(productoIds).stream()
                 .map(mapper::toDetalle)
                 .toList();
     }

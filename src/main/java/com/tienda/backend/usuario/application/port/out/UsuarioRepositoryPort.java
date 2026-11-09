@@ -13,6 +13,7 @@ import java.util.Set;
 public interface UsuarioRepositoryPort {
     Usuario save(Usuario usuario);
     Optional<Usuario> findById(Long id);
+    List<Usuario> findAllById(Collection<Long> ids);
     Optional<Usuario> findByUsername(String username);
     List<Long> findUsuarioIdsByRolId(Long rolId);
     PageResult<Usuario> findAll(UsuarioFiltro filtro, int page, int size);

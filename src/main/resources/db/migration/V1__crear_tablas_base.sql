@@ -213,11 +213,21 @@ CREATE TABLE movimientos_inventarios(
     observacion TEXT,
     -- Origen del movimiento (VENTA, DEVOLUCION_VENTA, RECEPCION_PEDIDO, ...)
     referencia_tipo VARCHAR(50),
-    referencia_id BIGINT
+    referencia_id BIGINT,
+
+    CONSTRAINT ck_movimientos_tipo CHECK (tipo_movimiento IN ('ENTRADA', 'SALIDA', 'TRASLADO', 'AJUSTE_POSITIVO', 'AJUSTE_NEGATIVO')),
+    -- Entradas y ajustes positivos solo tienen destino; salidas y ajustes negativos solo origen; traslados ambos y distintos
+    CONSTRAINT ck_movimientos_depositos CHECK (
+        (tipo_movimiento IN ('ENTRADA', 'AJUSTE_POSITIVO') AND deposito_destino_id IS NOT NULL AND deposito_origen_id IS NULL)
+        OR (tipo_movimiento IN ('SALIDA', 'AJUSTE_NEGATIVO') AND deposito_origen_id IS NOT NULL AND deposito_destino_id IS NULL)
+        OR (tipo_movimiento = 'TRASLADO' AND deposito_origen_id IS NOT NULL AND deposito_destino_id IS NOT NULL
+            AND deposito_origen_id <> deposito_destino_id)
+    )
 );
 
 CREATE INDEX idx_movimientos_referencia ON movimientos_inventarios(referencia_tipo, referencia_id);
 CREATE INDEX idx_movimientos_usuario_id ON movimientos_inventarios(usuario_id);
+CREATE INDEX idx_movimientos_fecha ON movimientos_inventarios(fecha_movimiento DESC);
 CREATE INDEX idx_movimientos_deposito_origen_id ON movimientos_inventarios(deposito_origen_id);
 CREATE INDEX idx_movimientos_deposito_destino_id ON movimientos_inventarios(deposito_destino_id);
 
@@ -233,6 +243,7 @@ CREATE TABLE movimiento_inventario_detalle(
 
 CREATE INDEX idx_movimiento_detalle_movimiento_id ON movimiento_inventario_detalle(movimiento_id);
 CREATE INDEX idx_movimiento_detalle_producto_id ON movimiento_inventario_detalle(producto_id);
+CREATE INDEX idx_movimiento_detalle_lote_id ON movimiento_inventario_detalle(lote_id);
 
 CREATE TABLE proveedores(
     id BIGSERIAL PRIMARY KEY,
@@ -333,7 +344,7 @@ CREATE INDEX idx_recepcion_detalle_lote_id ON recepcion_pedido_detalle(lote_id);
 CREATE TABLE tipos_cliente(
     id BIGSERIAL PRIMARY KEY,
     nombre VARCHAR(100) NOT NULL,
-    activo BOOLEAN NOT NULL DEFAULT TRUE,
+    estado VARCHAR(50) NOT NULL DEFAULT 'ACTIVO',
     created_by VARCHAR(150) NOT NULL,
     updated_by VARCHAR(150) NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -350,7 +361,7 @@ CREATE TABLE clientes(
     nombre VARCHAR(150) NOT NULL,
     telefono VARCHAR(30),
     email VARCHAR(255),
-    activo BOOLEAN NOT NULL DEFAULT TRUE,
+    estado VARCHAR(50) NOT NULL DEFAULT 'ACTIVO',
     created_by VARCHAR(150) NOT NULL,
     updated_by VARCHAR(150) NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -368,7 +379,7 @@ CREATE TABLE precios_presentacion(
     tipo_cliente_id BIGINT REFERENCES tipos_cliente(id),
     cantidad_minima DECIMAL(14, 4) NOT NULL DEFAULT 1.0000,
     precio DECIMAL(14, 4) NOT NULL,
-    activo BOOLEAN NOT NULL DEFAULT TRUE,
+    estado VARCHAR(50) NOT NULL DEFAULT 'ACTIVO',
     created_by VARCHAR(150) NOT NULL,
     updated_by VARCHAR(150) NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -390,7 +401,7 @@ CREATE TABLE cajas(
     id BIGSERIAL PRIMARY KEY,
     nombre VARCHAR(100) NOT NULL,
     deposito_id BIGINT NOT NULL REFERENCES depositos(id),
-    activa BOOLEAN NOT NULL DEFAULT TRUE,
+    estado VARCHAR(50) NOT NULL DEFAULT 'ACTIVO',
     created_by VARCHAR(150) NOT NULL,
     updated_by VARCHAR(150) NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -418,6 +429,8 @@ CREATE TABLE turnos_caja(
 
 -- Un solo turno abierto por caja
 CREATE UNIQUE INDEX uk_turnos_caja_abierto ON turnos_caja(caja_id) WHERE estado = 'ABIERTO';
+-- Un usuario solo puede tener un turno abierto a la vez (en cualquier caja)
+CREATE UNIQUE INDEX uk_turnos_caja_usuario_abierto ON turnos_caja(usuario_id) WHERE estado = 'ABIERTO';
 CREATE INDEX idx_turnos_caja_usuario_id ON turnos_caja(usuario_id);
 
 CREATE TABLE movimientos_caja(
@@ -441,7 +454,7 @@ CREATE INDEX idx_movimientos_caja_usuario_id ON movimientos_caja(usuario_id);
 CREATE TABLE metodos_pago(
     id BIGSERIAL PRIMARY KEY,
     nombre VARCHAR(100) NOT NULL,
-    activo BOOLEAN NOT NULL DEFAULT TRUE,
+    estado VARCHAR(50) NOT NULL DEFAULT 'ACTIVO',
     created_by VARCHAR(150) NOT NULL,
     updated_by VARCHAR(150) NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -454,6 +467,7 @@ CREATE UNIQUE INDEX uk_metodos_pago_nombre ON metodos_pago(nombre) WHERE deleted
 -- Ventas (nota de venta; no se borran, se anulan) ------------
 
 CREATE SEQUENCE seq_numero_venta START WITH 1 INCREMENT BY 1;
+CREATE SEQUENCE seq_numero_devolucion START WITH 1 INCREMENT BY 1;
 
 CREATE TABLE ventas(
     id BIGSERIAL PRIMARY KEY,
@@ -472,12 +486,19 @@ CREATE TABLE ventas(
     fecha_anulacion TIMESTAMP,
     motivo_anulacion VARCHAR(255),
     version BIGINT NOT NULL DEFAULT 0,
+    -- Efectivo devuelto al cliente. Los pagos guardan el efectivo neto (recibido - vuelto)
+    vuelto DECIMAL(14, 4) NOT NULL DEFAULT 0.0000,
+    -- Reintentos del POS: misma clave y mismo contenido = misma venta; la huella detecta contenido distinto
+    idempotency_key VARCHAR(64),
+    idempotency_hash VARCHAR(64),
 
+    CONSTRAINT ck_ventas_vuelto CHECK (vuelto >= 0),
     CONSTRAINT ck_ventas_estado CHECK (estado IN ('COMPLETADA', 'ANULADA')),
     CONSTRAINT ck_ventas_montos CHECK (subtotal >= 0 AND descuento_total >= 0 AND total >= 0)
 );
 
 CREATE UNIQUE INDEX uk_ventas_numero ON ventas(numero_venta);
+CREATE UNIQUE INDEX uk_ventas_usuario_idempotency ON ventas(usuario_id, idempotency_key) WHERE idempotency_key IS NOT NULL;
 CREATE INDEX idx_ventas_fecha_venta ON ventas(fecha_venta);
 CREATE INDEX idx_ventas_turno_id ON ventas(turno_id);
 CREATE INDEX idx_ventas_cliente_id ON ventas(cliente_id);
@@ -494,8 +515,8 @@ CREATE TABLE venta_detalle(
     precio_unitario DECIMAL(14, 4) NOT NULL,
     descuento DECIMAL(14, 4) NOT NULL DEFAULT 0.0000,
     subtotal DECIMAL(14, 4) NOT NULL,
-    es_precio_modifcado BOOLEAN NOT NULL DEFAULT FALSE,
-    motivo_precio VARCHAR(150)
+    es_precio_modificado BOOLEAN NOT NULL DEFAULT FALSE,
+    motivo_precio VARCHAR(150),
 
     CONSTRAINT ck_venta_detalle_cantidad CHECK (cantidad > 0),
     CONSTRAINT ck_venta_detalle_montos CHECK (precio_unitario >= 0 AND descuento >= 0 AND subtotal >= 0)
@@ -550,6 +571,13 @@ CREATE TABLE devoluciones_venta(
     motivo VARCHAR(255) NOT NULL,
     monto_reembolsado DECIMAL(14, 4) NOT NULL DEFAULT 0.0000,
     metodo_pago_id BIGINT REFERENCES metodos_pago(id),
+    -- Turno de caja donde se registro: el reembolso en efectivo sale de esa caja
+    turno_id BIGINT NOT NULL REFERENCES turnos_caja(id),
+    numero_devolucion VARCHAR(30) NOT NULL,
+    -- Si la devolucion es un cambio: la venta nueva que se llevo el cliente (el credito se aplica a ella)
+    venta_cambio_id BIGINT REFERENCES ventas(id),
+    idempotency_key VARCHAR(64),
+    idempotency_hash VARCHAR(64),
 
     CONSTRAINT ck_devoluciones_monto CHECK (monto_reembolsado >= 0),
     -- Si hay reembolso, debe indicarse el metodo
@@ -559,6 +587,10 @@ CREATE TABLE devoluciones_venta(
 CREATE INDEX idx_devoluciones_venta_metodo_pago_id ON devoluciones_venta(metodo_pago_id);
 CREATE INDEX idx_devoluciones_venta_venta_id ON devoluciones_venta(venta_id);
 CREATE INDEX idx_devoluciones_venta_usuario_id ON devoluciones_venta(usuario_id);
+CREATE INDEX idx_devoluciones_venta_turno_id ON devoluciones_venta(turno_id);
+CREATE INDEX idx_devoluciones_venta_cambio_id ON devoluciones_venta(venta_cambio_id);
+CREATE UNIQUE INDEX uk_devoluciones_numero ON devoluciones_venta(numero_devolucion);
+CREATE UNIQUE INDEX uk_devoluciones_usuario_idempotency ON devoluciones_venta(usuario_id, idempotency_key) WHERE idempotency_key IS NOT NULL;
 
 CREATE TABLE devolucion_venta_detalle(
     id BIGSERIAL PRIMARY KEY,
@@ -566,6 +598,7 @@ CREATE TABLE devolucion_venta_detalle(
     venta_detalle_id BIGINT NOT NULL REFERENCES venta_detalle(id),
     lote_id BIGINT NOT NULL REFERENCES lotes(id),
     cantidad DECIMAL(14, 4) NOT NULL,
+    -- Cantidad en unidad base (como venta_detalle_lote), del lote de donde salio
     -- FALSE si el producto devuelto esta danado/vencido y no debe volver al stock
     reingresa_stock BOOLEAN NOT NULL DEFAULT TRUE,
 
@@ -586,16 +619,21 @@ INSERT INTO tipos_cliente (nombre, created_by, updated_by) VALUES
 INSERT INTO metodos_pago (nombre, created_by, updated_by) VALUES
     ('EFECTIVO', 'SISTEMA', 'SISTEMA'),
     ('TARJETA', 'SISTEMA', 'SISTEMA'),
-    ('TRANSFERENCIA', 'SISTEMA', 'SISTEMA');
+    ('TRANSFERENCIA', 'SISTEMA', 'SISTEMA'),
+    -- Metodo interno: el credito de una devolucion aplicado a la venta de un cambio. No se usa para cobrar ni reembolsar.
+    ('CREDITO_DEVOLUCION', 'SISTEMA', 'SISTEMA');
 
 INSERT INTO permisos (nombre, descripcion, created_by, updated_by) VALUES
     ('CAJA_ABRIR', 'Abrir turno de caja', 'SISTEMA', 'SISTEMA'),
     ('CAJA_CERRAR', 'Cerrar turno de caja', 'SISTEMA', 'SISTEMA'),
     ('CAJA_MOVIMIENTO', 'Registrar ingresos y egresos de caja', 'SISTEMA', 'SISTEMA'),
+    ('CAJA_GESTIONAR', 'Gestionar cajas y supervisar turnos de otros usuarios', 'SISTEMA', 'SISTEMA'),
     ('VENTA_CREAR', 'Registrar ventas', 'SISTEMA', 'SISTEMA'),
     ('VENTA_ANULAR', 'Anular ventas', 'SISTEMA', 'SISTEMA'),
     ('VENTA_DEVOLVER', 'Registrar devoluciones de venta', 'SISTEMA', 'SISTEMA'),
     ('VENTA_VER', 'Consultar ventas y reportes', 'SISTEMA', 'SISTEMA'),
+    ('VENTA_PRECIO_MODIFICAR', 'Cambiar el precio de una linea durante la venta', 'SISTEMA', 'SISTEMA'),
+    ('VENTA_PRECIO_BAJO_COSTO', 'Vender con un precio manual por debajo del costo', 'SISTEMA', 'SISTEMA'),
     ('CLIENTE_GESTIONAR', 'Gestionar clientes y tipos de cliente', 'SISTEMA', 'SISTEMA'),
     ('PRECIO_GESTIONAR', 'Gestionar precios de venta', 'SISTEMA', 'SISTEMA'),
     ('USUARIO_GESTIONAR', 'Gestionar usuarios y sus roles', 'SISTEMA', 'SISTEMA'),
@@ -605,7 +643,8 @@ INSERT INTO permisos (nombre, descripcion, created_by, updated_by) VALUES
     ('INVENTARIO_VER', 'Consultar inventario y movimientos', 'SISTEMA', 'SISTEMA'),
     ('INVENTARIO_MOVER', 'Registrar entradas, salidas, traslados y ajustes de inventario', 'SISTEMA', 'SISTEMA'),
     ('PROVEEDOR_GESTIONAR', 'Gestionar proveedores', 'SISTEMA', 'SISTEMA'),
-    ('PEDIDO_GESTIONAR', 'Gestionar pedidos a proveedores y sus recepciones', 'SISTEMA', 'SISTEMA');
+    ('PEDIDO_GESTIONAR', 'Gestionar pedidos a proveedores y sus recepciones', 'SISTEMA', 'SISTEMA'),
+    ('METODO_PAGO_GESTIONAR', 'Gestionar metodos de pago', 'SISTEMA', 'SISTEMA');
 
 -- Rol de sistema ADMIN con todos los permisos
 INSERT INTO roles (nombre, created_by, updated_by) VALUES ('ADMIN', 'SISTEMA', 'SISTEMA');

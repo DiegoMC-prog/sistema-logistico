@@ -8,6 +8,8 @@ import com.tienda.backend.deposito.application.port.in.EliminarDepositoUseCase;
 import com.tienda.backend.deposito.application.port.in.ListarDepositoUseCase;
 import com.tienda.backend.deposito.application.port.in.ObtenerDepositoUseCase;
 import com.tienda.backend.deposito.application.port.out.DepositoRepositoryPort;
+import com.tienda.backend.deposito.application.port.out.InventarioConsultaPort;
+import com.tienda.backend.deposito.domain.exception.DepositoConStockException;
 import com.tienda.backend.deposito.domain.exception.DepositoNombreDuplicadoException;
 import com.tienda.backend.deposito.domain.exception.DepositoNotFoundException;
 import com.tienda.backend.deposito.domain.model.Deposito;
@@ -22,6 +24,7 @@ public class DepositoService implements CrearDepositoUseCase, EditarDepositoUseC
         ObtenerDepositoUseCase, EliminarDepositoUseCase, CambiarEstadoDepositoUseCase {
 
     private final DepositoRepositoryPort depositoRepositoryPort;
+    private final InventarioConsultaPort inventarioConsultaPort;
 
     @Override
     @Transactional
@@ -61,6 +64,9 @@ public class DepositoService implements CrearDepositoUseCase, EditarDepositoUseC
     @Transactional
     public void eliminar(Long id) {
         buscar(id);
+        if (inventarioConsultaPort.tieneStock(id)) {
+            throw new DepositoConStockException();
+        }
         depositoRepositoryPort.deleteById(id);
     }
 

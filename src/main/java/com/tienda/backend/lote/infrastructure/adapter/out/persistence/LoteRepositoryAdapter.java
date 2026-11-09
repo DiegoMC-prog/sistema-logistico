@@ -12,6 +12,8 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
+import java.util.List;
+import java.util.Collection;
 
 @Repository
 @RequiredArgsConstructor
@@ -23,6 +25,11 @@ public class LoteRepositoryAdapter implements LoteRepositoryPort {
     public Lote save(Lote lote) {
         LoteEntity guardado = loteJpaRepository.save(mapper.toEntity(lote));
         return mapper.toDomain(guardado);
+    }
+
+    @Override
+    public List<Lote> findAllById(Collection<Long> ids) {
+        return loteJpaRepository.findAllById(ids).stream().map(mapper::toDomain).toList();
     }
 
     @Override

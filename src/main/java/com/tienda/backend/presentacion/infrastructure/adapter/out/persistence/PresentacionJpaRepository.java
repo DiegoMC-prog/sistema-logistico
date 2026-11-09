@@ -4,12 +4,16 @@ import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
+import java.util.Collection;
 import java.util.Optional;
 
 public interface PresentacionJpaRepository extends JpaRepository<PresentacionEntity, Long> {
 
     @EntityGraph(attributePaths = "unidadMedida")
     List<PresentacionEntity> findByProductoIdOrderByEsUnidadBaseDescIdAsc(Long productoId);
+
+    @EntityGraph(attributePaths = "unidadMedida")
+    List<PresentacionEntity> findByProductoIdInAndEsUnidadBaseTrue(Collection<Long> productoIds);
 
     @EntityGraph(attributePaths = "unidadMedida")
     Optional<PresentacionEntity> findByCodigoBarras(String codigoBarras);

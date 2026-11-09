@@ -12,6 +12,8 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
+import java.util.List;
+import java.util.Collection;
 
 @Repository
 @RequiredArgsConstructor
@@ -36,6 +38,11 @@ public class ProductoRepositoryAdapter implements ProductoRepositoryPort {
                 result.getSize(),
                 result.getTotalElements(),
                 result.getTotalPages());
+    }
+
+    @Override
+    public List<Producto> findAllById(Collection<Long> ids) {
+        return productoJpaRepository.findAllById(ids).stream().map(mapper::toDomain).toList();
     }
 
     @Override

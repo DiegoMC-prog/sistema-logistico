@@ -24,11 +24,23 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.List;
 
+import static com.tienda.backend.shared.infrastructure.config.security.Permisos.CAJA_ABRIR;
+import static com.tienda.backend.shared.infrastructure.config.security.Permisos.CAJA_CERRAR;
+import static com.tienda.backend.shared.infrastructure.config.security.Permisos.CAJA_GESTIONAR;
+import static com.tienda.backend.shared.infrastructure.config.security.Permisos.CAJA_MOVIMIENTO;
 import static com.tienda.backend.shared.infrastructure.config.security.Permisos.CATALOGO_GESTIONAR;
+import static com.tienda.backend.shared.infrastructure.config.security.Permisos.CLIENTE_GESTIONAR;
 import static com.tienda.backend.shared.infrastructure.config.security.Permisos.DEPOSITO_GESTIONAR;
+import static com.tienda.backend.shared.infrastructure.config.security.Permisos.INVENTARIO_MOVER;
 import static com.tienda.backend.shared.infrastructure.config.security.Permisos.INVENTARIO_VER;
+import static com.tienda.backend.shared.infrastructure.config.security.Permisos.METODO_PAGO_GESTIONAR;
+import static com.tienda.backend.shared.infrastructure.config.security.Permisos.PRECIO_GESTIONAR;
 import static com.tienda.backend.shared.infrastructure.config.security.Permisos.ROL_GESTIONAR;
 import static com.tienda.backend.shared.infrastructure.config.security.Permisos.USUARIO_GESTIONAR;
+import static com.tienda.backend.shared.infrastructure.config.security.Permisos.VENTA_ANULAR;
+import static com.tienda.backend.shared.infrastructure.config.security.Permisos.VENTA_CREAR;
+import static com.tienda.backend.shared.infrastructure.config.security.Permisos.VENTA_DEVOLVER;
+import static com.tienda.backend.shared.infrastructure.config.security.Permisos.VENTA_VER;
 
 @Configuration
 @EnableWebSecurity
@@ -83,11 +95,53 @@ public class SecurityConfig {
                                 .hasAnyAuthority(CATALOGO_GESTIONAR, INVENTARIO_VER)
                         .requestMatchers("/api/v1/lotes/**").hasAuthority(CATALOGO_GESTIONAR)
 
+                        // Caja: cada operación con su permiso. El servicio además restringe cada turno a su dueño
+                        // (salvo CAJA_GESTIONAR, que supervisa). Las rutas específicas van antes que /cajas/**.
+                        .requestMatchers(HttpMethod.POST, "/api/v1/cajas/*/turnos").hasAuthority(CAJA_ABRIR)
+                        .requestMatchers(HttpMethod.GET, "/api/v1/cajas/*/turno-actual", "/api/v1/turnos/**")
+                                .hasAnyAuthority(CAJA_ABRIR, CAJA_CERRAR, CAJA_MOVIMIENTO, CAJA_GESTIONAR)
+                        .requestMatchers(HttpMethod.POST, "/api/v1/turnos/*/cerrar").hasAuthority(CAJA_CERRAR)
+                        .requestMatchers(HttpMethod.POST, "/api/v1/turnos/*/movimientos").hasAuthority(CAJA_MOVIMIENTO)
+                        .requestMatchers(HttpMethod.GET, "/api/v1/cajas/**").authenticated()
+                        .requestMatchers("/api/v1/cajas/**").hasAuthority(CAJA_GESTIONAR)
+
+                        // Devoluciones y cambios: registrar con VENTA_DEVOLVER; consultar con VENTA_VER o VENTA_DEVOLVER (el servicio
+                        // restringe a las propias a quien no tiene VENTA_VER). Antes de las reglas de /ventas/** que las taparían.
+                        .requestMatchers(HttpMethod.POST, "/api/v1/ventas/*/devoluciones", "/api/v1/ventas/*/cambios")
+                                .hasAuthority(VENTA_DEVOLVER)
+                        .requestMatchers(HttpMethod.GET, "/api/v1/ventas/*/devoluciones", "/api/v1/devoluciones/**")
+                                .hasAnyAuthority(VENTA_VER, VENTA_DEVOLVER)
+
+                        // Ventas: crear y anular con su permiso; consultar con VENTA_VER (o VENTA_CREAR para ver las propias,
+                        // que el servicio restringe a su autor)
+                        .requestMatchers(HttpMethod.POST, "/api/v1/ventas").hasAuthority(VENTA_CREAR)
+                        .requestMatchers(HttpMethod.POST, "/api/v1/ventas/*/anular").hasAuthority(VENTA_ANULAR)
+                        .requestMatchers(HttpMethod.GET, "/api/v1/ventas/**").hasAnyAuthority(VENTA_VER, VENTA_CREAR)
+
+                        // Precios: caja los consulta (incluido el precio aplicable); escribir exige PRECIO_GESTIONAR.
+                        // Va antes del catálogo porque estas rutas cuelgan de /presentaciones/**.
+                        .requestMatchers(HttpMethod.GET, "/api/v1/precios/**", "/api/v1/presentaciones/*/precios",
+                                "/api/v1/presentaciones/*/precio-aplicable").authenticated()
+                        .requestMatchers("/api/v1/precios/**", "/api/v1/presentaciones/*/precios",
+                                "/api/v1/presentaciones/*/precio-aplicable").hasAuthority(PRECIO_GESTIONAR)
+
                         // Catálogo y depósitos: lectura para cualquier autenticado, escritura con su permiso
                         .requestMatchers(HttpMethod.GET, CATALOGO).authenticated()
                         .requestMatchers(CATALOGO).hasAuthority(CATALOGO_GESTIONAR)
                         .requestMatchers(HttpMethod.GET, "/api/v1/depositos/**").authenticated()
                         .requestMatchers("/api/v1/depositos/**").hasAuthority(DEPOSITO_GESTIONAR)
+
+                        // Clientes, tipos de cliente y metodos de pago: caja y ventas los consultan, escribir exige permiso
+                        .requestMatchers(HttpMethod.GET, "/api/v1/clientes/**", "/api/v1/tipos-cliente/**",
+                                "/api/v1/metodos-pago/**").authenticated()
+                        .requestMatchers("/api/v1/clientes/**", "/api/v1/tipos-cliente/**")
+                                .hasAuthority(CLIENTE_GESTIONAR)
+                        .requestMatchers("/api/v1/metodos-pago/**").hasAuthority(METODO_PAGO_GESTIONAR)
+
+                        // Inventario: consultar con INVENTARIO_VER; registrar movimientos con INVENTARIO_MOVER
+                        .requestMatchers(HttpMethod.GET, "/api/v1/inventario/**")
+                                .hasAnyAuthority(INVENTARIO_VER, INVENTARIO_MOVER)
+                        .requestMatchers("/api/v1/inventario/**").hasAuthority(INVENTARIO_MOVER)
 
                         // Denegar por defecto: un módulo nuevo debe declarar aquí su permiso antes de quedar accesible
                         .requestMatchers("/api/v1/**").denyAll()

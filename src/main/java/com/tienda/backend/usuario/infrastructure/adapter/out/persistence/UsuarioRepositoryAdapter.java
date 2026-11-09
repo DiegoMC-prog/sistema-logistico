@@ -32,6 +32,11 @@ public class UsuarioRepositoryAdapter implements UsuarioRepositoryPort {
     }
 
     @Override
+    public List<Usuario> findAllById(Collection<Long> ids) {
+        return usuarioJpaRepository.findAllById(ids).stream().map(mapper::toDomain).toList();
+    }
+
+    @Override
     public Optional<Usuario> findById(Long id) {
         return usuarioJpaRepository.findById(id).map(mapper::toDomain);
     }
