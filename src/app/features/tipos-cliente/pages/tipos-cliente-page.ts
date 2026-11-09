@@ -3,6 +3,8 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { errorMessage } from '../../../core/api/api-error';
 import { EstadoCounts, estadoCounts, isActivo } from '../../../core/api/estado';
 import { PagedList } from '../../../core/api/paged-list';
+import { AuthService } from '../../../core/auth/auth.service';
+import { MODULOS } from '../../../core/auth/permisos';
 import { Badge } from '../../../shared/ui/badge';
 import { Btn, IconBtn } from '../../../shared/ui/button';
 import { Card } from '../../../shared/ui/card';
@@ -29,7 +31,9 @@ import { TiposClienteService } from '../data/tipos-cliente.service';
           <h2 class="text-lg font-semibold text-ink">Tipos de cliente</h2>
           <p class="mt-1 text-sm text-muted">Los precios pueden definirse por tipo de cliente. «GENERAL» es un tipo de sistema.</p>
         </div>
-        <button appBtn icon="plus" (click)="openForm(null)">Nuevo tipo</button>
+        @if (puede.crear) {
+          <button appBtn icon="plus" (click)="openForm(null)">Nuevo tipo</button>
+        }
       </div>
 
       @if (actionError()) {
@@ -73,7 +77,7 @@ import { TiposClienteService } from '../data/tipos-cliente.service';
                       </td>
                       <td>
                         <div class="flex items-center gap-3">
-                          <app-toggle [checked]="isActivo(t.estado)" [disabled]="sistema(t) || togglingId() === t.id"
+                          <app-toggle [checked]="isActivo(t.estado)" [disabled]="sistema(t) || togglingId() === t.id || !puede.activar"
                             [label]="'Cambiar estado de ' + t.nombre" (checkedChange)="toggle(t, $event)" />
                           <app-badge [tone]="isActivo(t.estado) ? 'success' : 'neutral'">{{ isActivo(t.estado) ? 'Activo' : 'Inactivo' }}</app-badge>
                         </div>
@@ -81,8 +85,8 @@ import { TiposClienteService } from '../data/tipos-cliente.service';
                       <td>
                         <div class="flex justify-end">
                           @if (!sistema(t)) {
-                            <button appIconBtn icon="edit" [label]="'Editar ' + t.nombre" (click)="openForm(t)"></button>
-                            <button appIconBtn icon="trash" danger [label]="'Eliminar ' + t.nombre" (click)="toDelete.set(t)"></button>
+                            @if (puede.editar) { <button appIconBtn icon="edit" [label]="'Editar ' + t.nombre" (click)="openForm(t)"></button> }
+                            @if (puede.eliminar) { <button appIconBtn icon="trash" danger [label]="'Eliminar ' + t.nombre" (click)="toDelete.set(t)"></button> }
                           }
                         </div>
                       </td>
@@ -130,6 +134,7 @@ export class TiposClientePage {
   protected readonly isActivo = isActivo;
   protected readonly sistema = esTipoSistema;
 
+  protected readonly puede = inject(AuthService).crud(MODULOS.cliente);
   protected readonly list = new PagedList<TipoCliente, TipoClienteFilters>((f) => this.service.list(f));
   protected readonly counts = signal<EstadoCounts | null>(null);
 
