@@ -24,23 +24,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.List;
 
-import static com.tienda.backend.shared.infrastructure.config.security.Permisos.CAJA_ABRIR;
-import static com.tienda.backend.shared.infrastructure.config.security.Permisos.CAJA_CERRAR;
-import static com.tienda.backend.shared.infrastructure.config.security.Permisos.CAJA_GESTIONAR;
-import static com.tienda.backend.shared.infrastructure.config.security.Permisos.CAJA_MOVIMIENTO;
-import static com.tienda.backend.shared.infrastructure.config.security.Permisos.CATALOGO_GESTIONAR;
-import static com.tienda.backend.shared.infrastructure.config.security.Permisos.CLIENTE_GESTIONAR;
-import static com.tienda.backend.shared.infrastructure.config.security.Permisos.DEPOSITO_GESTIONAR;
-import static com.tienda.backend.shared.infrastructure.config.security.Permisos.INVENTARIO_MOVER;
-import static com.tienda.backend.shared.infrastructure.config.security.Permisos.INVENTARIO_VER;
-import static com.tienda.backend.shared.infrastructure.config.security.Permisos.METODO_PAGO_GESTIONAR;
-import static com.tienda.backend.shared.infrastructure.config.security.Permisos.PRECIO_GESTIONAR;
-import static com.tienda.backend.shared.infrastructure.config.security.Permisos.ROL_GESTIONAR;
-import static com.tienda.backend.shared.infrastructure.config.security.Permisos.USUARIO_GESTIONAR;
-import static com.tienda.backend.shared.infrastructure.config.security.Permisos.VENTA_ANULAR;
-import static com.tienda.backend.shared.infrastructure.config.security.Permisos.VENTA_CREAR;
-import static com.tienda.backend.shared.infrastructure.config.security.Permisos.VENTA_DEVOLVER;
-import static com.tienda.backend.shared.infrastructure.config.security.Permisos.VENTA_VER;
+import static com.tienda.backend.shared.infrastructure.config.security.Permisos.*;
 
 @Configuration
 @EnableWebSecurity
@@ -56,12 +40,24 @@ public class SecurityConfig {
             "/webjars/**"
     };
 
-    /** Catálogo: cualquier usuario autenticado lo consulta (caja y ventas lo necesitan); modificarlo exige CATALOGO_GESTIONAR. */
+    /** Catálogo: cualquier usuario autenticado lo consulta (caja y ventas lo necesitan); modificarlo exige los permisos CATALOGO_*. */
     private static final String[] CATALOGO = {
             "/api/v1/categorias/**",
             "/api/v1/productos/**",
             "/api/v1/unidades-medida/**",
             "/api/v1/presentaciones/**"
+    };
+
+    /** Precios: cuelgan de /presentaciones/**, pero llevan su propio permiso. */
+    private static final String[] PRECIOS = {
+            "/api/v1/precios/**",
+            "/api/v1/presentaciones/*/precios",
+            "/api/v1/presentaciones/*/precio-aplicable"
+    };
+
+    private static final String[] CLIENTES = {
+            "/api/v1/clientes/**",
+            "/api/v1/tipos-cliente/**"
     };
 
     @Bean
@@ -84,26 +80,47 @@ public class SecurityConfig {
                                 "/api/v1/auth/logout").permitAll()
                         .requestMatchers("/api/v1/auth/**").authenticated()
 
-                        // Usuarios, roles y permisos. Para asignar roles a un usuario hay que poder listarlos.
-                        .requestMatchers("/api/v1/usuarios/**").hasAuthority(USUARIO_GESTIONAR)
-                        .requestMatchers(HttpMethod.GET, "/api/v1/roles/**", "/api/v1/permisos/**")
-                                .hasAnyAuthority(USUARIO_GESTIONAR, ROL_GESTIONAR)
-                        .requestMatchers("/api/v1/roles/**", "/api/v1/permisos/**").hasAuthority(ROL_GESTIONAR)
+                        // Usuarios. Las acciones especiales van antes que el CRUD genérico de /usuarios/**.
+                        .requestMatchers(HttpMethod.PATCH, "/api/v1/usuarios/*/activar", "/api/v1/usuarios/*/desactivar")
+                                .hasAuthority(USUARIO_ACTIVAR)
+                        .requestMatchers(HttpMethod.POST, "/api/v1/usuarios/*/restablecer-password")
+                                .hasAuthority(USUARIO_RESTABLECER_PASSWORD)
+                        .requestMatchers(HttpMethod.PUT, "/api/v1/usuarios/*/roles").hasAuthority(USUARIO_ASIGNAR_ROLES)
+                        .requestMatchers(HttpMethod.GET, "/api/v1/usuarios/**").hasAuthority(USUARIO_VER)
+                        .requestMatchers(HttpMethod.POST, "/api/v1/usuarios").hasAuthority(USUARIO_CREAR)
+                        .requestMatchers(HttpMethod.PUT, "/api/v1/usuarios/*").hasAuthority(USUARIO_EDITAR)
+                        .requestMatchers(HttpMethod.DELETE, "/api/v1/usuarios/*").hasAuthority(USUARIO_ELIMINAR)
 
-                        // Lotes: llevan costos, así que ni la lectura es para cualquiera
+                        // Roles y permisos. Para asignar roles a un usuario hay que poder listar los roles; para
+                        // armar un rol, listar los permisos.
+                        .requestMatchers(HttpMethod.GET, "/api/v1/roles/**")
+                                .hasAnyAuthority(ROL_VER, USUARIO_CREAR, USUARIO_EDITAR, USUARIO_ASIGNAR_ROLES)
+                        .requestMatchers(HttpMethod.GET, "/api/v1/permisos/**")
+                                .hasAnyAuthority(ROL_VER, ROL_CREAR, ROL_EDITAR, ROL_ASIGNAR_PERMISOS)
+                        .requestMatchers(HttpMethod.PUT, "/api/v1/roles/*/permisos").hasAuthority(ROL_ASIGNAR_PERMISOS)
+                        .requestMatchers(HttpMethod.POST, "/api/v1/roles").hasAuthority(ROL_CREAR)
+                        .requestMatchers(HttpMethod.PUT, "/api/v1/roles/*").hasAuthority(ROL_EDITAR)
+                        .requestMatchers(HttpMethod.DELETE, "/api/v1/roles/*").hasAuthority(ROL_ELIMINAR)
+
+                        // Lotes (parte del catálogo): llevan costos, así que ni la lectura es para cualquiera
                         .requestMatchers(HttpMethod.GET, "/api/v1/lotes/**")
-                                .hasAnyAuthority(CATALOGO_GESTIONAR, INVENTARIO_VER)
-                        .requestMatchers("/api/v1/lotes/**").hasAuthority(CATALOGO_GESTIONAR)
+                                .hasAnyAuthority(CATALOGO_EDITAR, INVENTARIO_VER)
+                        .requestMatchers(HttpMethod.PUT, "/api/v1/lotes/*").hasAuthority(CATALOGO_EDITAR)
+                        .requestMatchers(HttpMethod.DELETE, "/api/v1/lotes/*").hasAuthority(CATALOGO_ELIMINAR)
 
                         // Caja: cada operación con su permiso. El servicio además restringe cada turno a su dueño
-                        // (salvo CAJA_GESTIONAR, que supervisa). Las rutas específicas van antes que /cajas/**.
+                        // (salvo CAJA_SUPERVISAR, que supervisa). Las rutas específicas van antes que /cajas/**.
                         .requestMatchers(HttpMethod.POST, "/api/v1/cajas/*/turnos").hasAuthority(CAJA_ABRIR)
                         .requestMatchers(HttpMethod.GET, "/api/v1/cajas/*/turno-actual", "/api/v1/turnos/**")
-                                .hasAnyAuthority(CAJA_ABRIR, CAJA_CERRAR, CAJA_MOVIMIENTO, CAJA_GESTIONAR)
+                                .hasAnyAuthority(CAJA_ABRIR, CAJA_CERRAR, CAJA_MOVIMIENTO, CAJA_SUPERVISAR)
                         .requestMatchers(HttpMethod.POST, "/api/v1/turnos/*/cerrar").hasAuthority(CAJA_CERRAR)
                         .requestMatchers(HttpMethod.POST, "/api/v1/turnos/*/movimientos").hasAuthority(CAJA_MOVIMIENTO)
                         .requestMatchers(HttpMethod.GET, "/api/v1/cajas/**").authenticated()
-                        .requestMatchers("/api/v1/cajas/**").hasAuthority(CAJA_GESTIONAR)
+                        .requestMatchers(HttpMethod.PATCH, "/api/v1/cajas/*/activar", "/api/v1/cajas/*/desactivar")
+                                .hasAuthority(CAJA_ACTIVAR)
+                        .requestMatchers(HttpMethod.POST, "/api/v1/cajas").hasAuthority(CAJA_CREAR)
+                        .requestMatchers(HttpMethod.PUT, "/api/v1/cajas/*").hasAuthority(CAJA_EDITAR)
+                        .requestMatchers(HttpMethod.DELETE, "/api/v1/cajas/*").hasAuthority(CAJA_ELIMINAR)
 
                         // Devoluciones y cambios: registrar con VENTA_DEVOLVER; consultar con VENTA_VER o VENTA_DEVOLVER (el servicio
                         // restringe a las propias a quien no tiene VENTA_VER). Antes de las reglas de /ventas/** que las taparían.
@@ -118,25 +135,45 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/v1/ventas/*/anular").hasAuthority(VENTA_ANULAR)
                         .requestMatchers(HttpMethod.GET, "/api/v1/ventas/**").hasAnyAuthority(VENTA_VER, VENTA_CREAR)
 
-                        // Precios: caja los consulta (incluido el precio aplicable); escribir exige PRECIO_GESTIONAR.
+                        // Precios: caja los consulta (incluido el precio aplicable); escribir exige permiso de PRECIO.
                         // Va antes del catálogo porque estas rutas cuelgan de /presentaciones/**.
-                        .requestMatchers(HttpMethod.GET, "/api/v1/precios/**", "/api/v1/presentaciones/*/precios",
-                                "/api/v1/presentaciones/*/precio-aplicable").authenticated()
-                        .requestMatchers("/api/v1/precios/**", "/api/v1/presentaciones/*/precios",
-                                "/api/v1/presentaciones/*/precio-aplicable").hasAuthority(PRECIO_GESTIONAR)
+                        .requestMatchers(HttpMethod.GET, PRECIOS).authenticated()
+                        .requestMatchers(HttpMethod.PATCH, "/api/v1/precios/*/activar", "/api/v1/precios/*/desactivar")
+                                .hasAuthority(PRECIO_ACTIVAR)
+                        .requestMatchers(HttpMethod.POST, PRECIOS).hasAuthority(PRECIO_CREAR)
+                        .requestMatchers(HttpMethod.PUT, PRECIOS).hasAuthority(PRECIO_EDITAR)
+                        .requestMatchers(HttpMethod.DELETE, PRECIOS).hasAuthority(PRECIO_ELIMINAR)
 
                         // Catálogo y depósitos: lectura para cualquier autenticado, escritura con su permiso
                         .requestMatchers(HttpMethod.GET, CATALOGO).authenticated()
-                        .requestMatchers(CATALOGO).hasAuthority(CATALOGO_GESTIONAR)
+                        .requestMatchers(HttpMethod.PATCH, "/api/v1/productos/*/activar", "/api/v1/productos/*/desactivar")
+                                .hasAuthority(CATALOGO_ACTIVAR)
+                        .requestMatchers(HttpMethod.POST, CATALOGO).hasAuthority(CATALOGO_CREAR)
+                        .requestMatchers(HttpMethod.PUT, CATALOGO).hasAuthority(CATALOGO_EDITAR)
+                        .requestMatchers(HttpMethod.DELETE, CATALOGO).hasAuthority(CATALOGO_ELIMINAR)
+
                         .requestMatchers(HttpMethod.GET, "/api/v1/depositos/**").authenticated()
-                        .requestMatchers("/api/v1/depositos/**").hasAuthority(DEPOSITO_GESTIONAR)
+                        .requestMatchers(HttpMethod.PATCH, "/api/v1/depositos/*/activar", "/api/v1/depositos/*/desactivar")
+                                .hasAuthority(DEPOSITO_ACTIVAR)
+                        .requestMatchers(HttpMethod.POST, "/api/v1/depositos").hasAuthority(DEPOSITO_CREAR)
+                        .requestMatchers(HttpMethod.PUT, "/api/v1/depositos/*").hasAuthority(DEPOSITO_EDITAR)
+                        .requestMatchers(HttpMethod.DELETE, "/api/v1/depositos/*").hasAuthority(DEPOSITO_ELIMINAR)
 
                         // Clientes, tipos de cliente y metodos de pago: caja y ventas los consultan, escribir exige permiso
                         .requestMatchers(HttpMethod.GET, "/api/v1/clientes/**", "/api/v1/tipos-cliente/**",
                                 "/api/v1/metodos-pago/**").authenticated()
-                        .requestMatchers("/api/v1/clientes/**", "/api/v1/tipos-cliente/**")
-                                .hasAuthority(CLIENTE_GESTIONAR)
-                        .requestMatchers("/api/v1/metodos-pago/**").hasAuthority(METODO_PAGO_GESTIONAR)
+                        .requestMatchers(HttpMethod.PATCH, "/api/v1/clientes/*/activar", "/api/v1/clientes/*/desactivar",
+                                "/api/v1/tipos-cliente/*/activar", "/api/v1/tipos-cliente/*/desactivar")
+                                .hasAuthority(CLIENTE_ACTIVAR)
+                        .requestMatchers(HttpMethod.POST, CLIENTES).hasAuthority(CLIENTE_CREAR)
+                        .requestMatchers(HttpMethod.PUT, CLIENTES).hasAuthority(CLIENTE_EDITAR)
+                        .requestMatchers(HttpMethod.DELETE, CLIENTES).hasAuthority(CLIENTE_ELIMINAR)
+
+                        .requestMatchers(HttpMethod.PATCH, "/api/v1/metodos-pago/*/activar", "/api/v1/metodos-pago/*/desactivar")
+                                .hasAuthority(METODO_PAGO_ACTIVAR)
+                        .requestMatchers(HttpMethod.POST, "/api/v1/metodos-pago").hasAuthority(METODO_PAGO_CREAR)
+                        .requestMatchers(HttpMethod.PUT, "/api/v1/metodos-pago/*").hasAuthority(METODO_PAGO_EDITAR)
+                        .requestMatchers(HttpMethod.DELETE, "/api/v1/metodos-pago/*").hasAuthority(METODO_PAGO_ELIMINAR)
 
                         // Inventario: consultar con INVENTARIO_VER; registrar movimientos con INVENTARIO_MOVER
                         .requestMatchers(HttpMethod.GET, "/api/v1/inventario/**")

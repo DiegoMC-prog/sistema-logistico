@@ -48,7 +48,7 @@ public class TurnoService implements AbrirTurnoUseCase, CerrarTurnoUseCase, Regi
         ConsultarTurnoUseCase, ConsultarEfectivoTurnoUseCase {
 
     /** Permiso de supervisión (debe coincidir con el de la tabla permisos): ver y operar turnos de otros usuarios. */
-    private static final String PERMISO_SUPERVISION = "CAJA_GESTIONAR";
+    private static final String PERMISO_SUPERVISION = "CAJA_SUPERVISAR";
 
     private final CajaRepositoryPort cajaRepositoryPort;
     private final TurnoRepositoryPort turnoRepositoryPort;

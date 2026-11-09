@@ -60,6 +60,11 @@ CREATE INDEX idx_sesiones_usuario_id ON sesiones(usuario_id);
 CREATE TABLE permisos(
     id BIGSERIAL PRIMARY KEY,
     nombre VARCHAR(150) NOT NULL,
+    -- modulo y accion agrupan los permisos en la pantalla de roles (matriz modulo x accion).
+    -- nombre = modulo || '_' || accion. estandar = TRUE para VER, CREAR, EDITAR y ELIMINAR (columnas fijas de la matriz).
+    modulo VARCHAR(40) NOT NULL,
+    accion VARCHAR(60) NOT NULL,
+    estandar BOOLEAN NOT NULL DEFAULT FALSE,
     descripcion TEXT,
     created_by VARCHAR(150) NOT NULL,
     updated_by VARCHAR(150) NOT NULL,
@@ -69,6 +74,7 @@ CREATE TABLE permisos(
 );
 
 CREATE UNIQUE INDEX idx_permisos_nombre_unique ON permisos(nombre) WHERE deleted_at IS NULL;
+CREATE UNIQUE INDEX idx_permisos_modulo_accion_unique ON permisos(modulo, accion) WHERE deleted_at IS NULL;
 
 CREATE TABLE rol_permiso(
     id BIGSERIAL PRIMARY KEY,
@@ -623,28 +629,70 @@ INSERT INTO metodos_pago (nombre, created_by, updated_by) VALUES
     -- Metodo interno: el credito de una devolucion aplicado a la venta de un cambio. No se usa para cobrar ni reembolsar.
     ('CREDITO_DEVOLUCION', 'SISTEMA', 'SISTEMA');
 
-INSERT INTO permisos (nombre, descripcion, created_by, updated_by) VALUES
-    ('CAJA_ABRIR', 'Abrir turno de caja', 'SISTEMA', 'SISTEMA'),
-    ('CAJA_CERRAR', 'Cerrar turno de caja', 'SISTEMA', 'SISTEMA'),
-    ('CAJA_MOVIMIENTO', 'Registrar ingresos y egresos de caja', 'SISTEMA', 'SISTEMA'),
-    ('CAJA_GESTIONAR', 'Gestionar cajas y supervisar turnos de otros usuarios', 'SISTEMA', 'SISTEMA'),
-    ('VENTA_CREAR', 'Registrar ventas', 'SISTEMA', 'SISTEMA'),
-    ('VENTA_ANULAR', 'Anular ventas', 'SISTEMA', 'SISTEMA'),
-    ('VENTA_DEVOLVER', 'Registrar devoluciones de venta', 'SISTEMA', 'SISTEMA'),
-    ('VENTA_VER', 'Consultar ventas y reportes', 'SISTEMA', 'SISTEMA'),
-    ('VENTA_PRECIO_MODIFICAR', 'Cambiar el precio de una linea durante la venta', 'SISTEMA', 'SISTEMA'),
-    ('VENTA_PRECIO_BAJO_COSTO', 'Vender con un precio manual por debajo del costo', 'SISTEMA', 'SISTEMA'),
-    ('CLIENTE_GESTIONAR', 'Gestionar clientes y tipos de cliente', 'SISTEMA', 'SISTEMA'),
-    ('PRECIO_GESTIONAR', 'Gestionar precios de venta', 'SISTEMA', 'SISTEMA'),
-    ('USUARIO_GESTIONAR', 'Gestionar usuarios y sus roles', 'SISTEMA', 'SISTEMA'),
-    ('ROL_GESTIONAR', 'Gestionar roles y sus permisos', 'SISTEMA', 'SISTEMA'),
-    ('CATALOGO_GESTIONAR', 'Gestionar categorias, productos, unidades de medida, presentaciones y lotes', 'SISTEMA', 'SISTEMA'),
-    ('DEPOSITO_GESTIONAR', 'Gestionar depositos', 'SISTEMA', 'SISTEMA'),
-    ('INVENTARIO_VER', 'Consultar inventario y movimientos', 'SISTEMA', 'SISTEMA'),
-    ('INVENTARIO_MOVER', 'Registrar entradas, salidas, traslados y ajustes de inventario', 'SISTEMA', 'SISTEMA'),
-    ('PROVEEDOR_GESTIONAR', 'Gestionar proveedores', 'SISTEMA', 'SISTEMA'),
-    ('PEDIDO_GESTIONAR', 'Gestionar pedidos a proveedores y sus recepciones', 'SISTEMA', 'SISTEMA'),
-    ('METODO_PAGO_GESTIONAR', 'Gestionar metodos de pago', 'SISTEMA', 'SISTEMA');
+-- Permisos por modulo y accion. nombre = modulo_accion; estandar = VER/CREAR/EDITAR/ELIMINAR.
+-- Las lecturas de catalogo, depositos, clientes, precios y metodos de pago estan abiertas a cualquier usuario
+-- autenticado (caja y ventas las necesitan), por eso esos modulos no tienen permiso VER.
+INSERT INTO permisos (nombre, modulo, accion, estandar, descripcion, created_by, updated_by) VALUES
+    ('USUARIO_VER', 'USUARIO', 'VER', TRUE, 'Consultar usuarios', 'SISTEMA', 'SISTEMA'),
+    ('USUARIO_CREAR', 'USUARIO', 'CREAR', TRUE, 'Crear usuarios', 'SISTEMA', 'SISTEMA'),
+    ('USUARIO_EDITAR', 'USUARIO', 'EDITAR', TRUE, 'Editar datos de usuarios', 'SISTEMA', 'SISTEMA'),
+    ('USUARIO_ELIMINAR', 'USUARIO', 'ELIMINAR', TRUE, 'Eliminar usuarios', 'SISTEMA', 'SISTEMA'),
+    ('USUARIO_ACTIVAR', 'USUARIO', 'ACTIVAR', FALSE, 'Activar y desactivar usuarios', 'SISTEMA', 'SISTEMA'),
+    ('USUARIO_RESTABLECER_PASSWORD', 'USUARIO', 'RESTABLECER_PASSWORD', FALSE, 'Restablecer la contrasena de un usuario', 'SISTEMA', 'SISTEMA'),
+    ('USUARIO_ASIGNAR_ROLES', 'USUARIO', 'ASIGNAR_ROLES', FALSE, 'Asignar roles a un usuario', 'SISTEMA', 'SISTEMA'),
+
+    ('ROL_VER', 'ROL', 'VER', TRUE, 'Consultar roles y permisos', 'SISTEMA', 'SISTEMA'),
+    ('ROL_CREAR', 'ROL', 'CREAR', TRUE, 'Crear roles', 'SISTEMA', 'SISTEMA'),
+    ('ROL_EDITAR', 'ROL', 'EDITAR', TRUE, 'Editar el nombre de roles', 'SISTEMA', 'SISTEMA'),
+    ('ROL_ELIMINAR', 'ROL', 'ELIMINAR', TRUE, 'Eliminar roles', 'SISTEMA', 'SISTEMA'),
+    ('ROL_ASIGNAR_PERMISOS', 'ROL', 'ASIGNAR_PERMISOS', FALSE, 'Asignar permisos a un rol', 'SISTEMA', 'SISTEMA'),
+
+    ('CATALOGO_CREAR', 'CATALOGO', 'CREAR', TRUE, 'Crear categorias, productos, unidades de medida y presentaciones', 'SISTEMA', 'SISTEMA'),
+    ('CATALOGO_EDITAR', 'CATALOGO', 'EDITAR', TRUE, 'Editar categorias, productos, unidades de medida, presentaciones y lotes; consultar lotes', 'SISTEMA', 'SISTEMA'),
+    ('CATALOGO_ELIMINAR', 'CATALOGO', 'ELIMINAR', TRUE, 'Eliminar categorias, productos, unidades de medida, presentaciones y lotes', 'SISTEMA', 'SISTEMA'),
+    ('CATALOGO_ACTIVAR', 'CATALOGO', 'ACTIVAR', FALSE, 'Activar y desactivar productos', 'SISTEMA', 'SISTEMA'),
+
+    ('DEPOSITO_CREAR', 'DEPOSITO', 'CREAR', TRUE, 'Crear depositos', 'SISTEMA', 'SISTEMA'),
+    ('DEPOSITO_EDITAR', 'DEPOSITO', 'EDITAR', TRUE, 'Editar depositos', 'SISTEMA', 'SISTEMA'),
+    ('DEPOSITO_ELIMINAR', 'DEPOSITO', 'ELIMINAR', TRUE, 'Eliminar depositos', 'SISTEMA', 'SISTEMA'),
+    ('DEPOSITO_ACTIVAR', 'DEPOSITO', 'ACTIVAR', FALSE, 'Activar y desactivar depositos', 'SISTEMA', 'SISTEMA'),
+
+    ('CLIENTE_CREAR', 'CLIENTE', 'CREAR', TRUE, 'Crear clientes y tipos de cliente', 'SISTEMA', 'SISTEMA'),
+    ('CLIENTE_EDITAR', 'CLIENTE', 'EDITAR', TRUE, 'Editar clientes y tipos de cliente', 'SISTEMA', 'SISTEMA'),
+    ('CLIENTE_ELIMINAR', 'CLIENTE', 'ELIMINAR', TRUE, 'Eliminar clientes y tipos de cliente', 'SISTEMA', 'SISTEMA'),
+    ('CLIENTE_ACTIVAR', 'CLIENTE', 'ACTIVAR', FALSE, 'Activar y desactivar clientes y tipos de cliente', 'SISTEMA', 'SISTEMA'),
+
+    ('PRECIO_CREAR', 'PRECIO', 'CREAR', TRUE, 'Crear precios de venta', 'SISTEMA', 'SISTEMA'),
+    ('PRECIO_EDITAR', 'PRECIO', 'EDITAR', TRUE, 'Editar precios de venta', 'SISTEMA', 'SISTEMA'),
+    ('PRECIO_ELIMINAR', 'PRECIO', 'ELIMINAR', TRUE, 'Eliminar precios de venta', 'SISTEMA', 'SISTEMA'),
+    ('PRECIO_ACTIVAR', 'PRECIO', 'ACTIVAR', FALSE, 'Activar y desactivar precios de venta', 'SISTEMA', 'SISTEMA'),
+
+    ('METODO_PAGO_CREAR', 'METODO_PAGO', 'CREAR', TRUE, 'Crear metodos de pago', 'SISTEMA', 'SISTEMA'),
+    ('METODO_PAGO_EDITAR', 'METODO_PAGO', 'EDITAR', TRUE, 'Editar metodos de pago', 'SISTEMA', 'SISTEMA'),
+    ('METODO_PAGO_ELIMINAR', 'METODO_PAGO', 'ELIMINAR', TRUE, 'Eliminar metodos de pago', 'SISTEMA', 'SISTEMA'),
+    ('METODO_PAGO_ACTIVAR', 'METODO_PAGO', 'ACTIVAR', FALSE, 'Activar y desactivar metodos de pago', 'SISTEMA', 'SISTEMA'),
+
+    ('INVENTARIO_VER', 'INVENTARIO', 'VER', TRUE, 'Consultar inventario y movimientos', 'SISTEMA', 'SISTEMA'),
+    ('INVENTARIO_MOVER', 'INVENTARIO', 'MOVER', FALSE, 'Registrar entradas, salidas, traslados y ajustes de inventario', 'SISTEMA', 'SISTEMA'),
+
+    ('CAJA_CREAR', 'CAJA', 'CREAR', TRUE, 'Crear cajas', 'SISTEMA', 'SISTEMA'),
+    ('CAJA_EDITAR', 'CAJA', 'EDITAR', TRUE, 'Editar cajas', 'SISTEMA', 'SISTEMA'),
+    ('CAJA_ELIMINAR', 'CAJA', 'ELIMINAR', TRUE, 'Eliminar cajas', 'SISTEMA', 'SISTEMA'),
+    ('CAJA_ACTIVAR', 'CAJA', 'ACTIVAR', FALSE, 'Activar y desactivar cajas', 'SISTEMA', 'SISTEMA'),
+    ('CAJA_ABRIR', 'CAJA', 'ABRIR', FALSE, 'Abrir turno de caja', 'SISTEMA', 'SISTEMA'),
+    ('CAJA_CERRAR', 'CAJA', 'CERRAR', FALSE, 'Cerrar turno de caja', 'SISTEMA', 'SISTEMA'),
+    ('CAJA_MOVIMIENTO', 'CAJA', 'MOVIMIENTO', FALSE, 'Registrar ingresos y egresos de caja', 'SISTEMA', 'SISTEMA'),
+    ('CAJA_SUPERVISAR', 'CAJA', 'SUPERVISAR', FALSE, 'Ver y operar los turnos de otros usuarios', 'SISTEMA', 'SISTEMA'),
+
+    ('VENTA_VER', 'VENTA', 'VER', TRUE, 'Consultar todas las ventas, devoluciones y reportes', 'SISTEMA', 'SISTEMA'),
+    ('VENTA_CREAR', 'VENTA', 'CREAR', TRUE, 'Registrar ventas', 'SISTEMA', 'SISTEMA'),
+    ('VENTA_ANULAR', 'VENTA', 'ANULAR', FALSE, 'Anular ventas', 'SISTEMA', 'SISTEMA'),
+    ('VENTA_DEVOLVER', 'VENTA', 'DEVOLVER', FALSE, 'Registrar devoluciones y cambios de venta', 'SISTEMA', 'SISTEMA'),
+    ('VENTA_PRECIO_MODIFICAR', 'VENTA', 'PRECIO_MODIFICAR', FALSE, 'Cambiar el precio de una linea durante la venta', 'SISTEMA', 'SISTEMA'),
+    ('VENTA_PRECIO_BAJO_COSTO', 'VENTA', 'PRECIO_BAJO_COSTO', FALSE, 'Vender con un precio manual por debajo del costo', 'SISTEMA', 'SISTEMA'),
+
+    ('PROVEEDOR_GESTIONAR', 'PROVEEDOR', 'GESTIONAR', FALSE, 'Gestionar proveedores', 'SISTEMA', 'SISTEMA'),
+    ('PEDIDO_GESTIONAR', 'PEDIDO', 'GESTIONAR', FALSE, 'Gestionar pedidos a proveedores y sus recepciones', 'SISTEMA', 'SISTEMA');
 
 -- Rol de sistema ADMIN con todos los permisos
 INSERT INTO roles (nombre, created_by, updated_by) VALUES ('ADMIN', 'SISTEMA', 'SISTEMA');

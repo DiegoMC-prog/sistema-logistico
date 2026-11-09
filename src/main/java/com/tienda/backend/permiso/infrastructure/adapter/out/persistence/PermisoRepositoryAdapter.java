@@ -25,6 +25,7 @@ public class PermisoRepositoryAdapter implements PermisoRepositoryPort {
     }
 
     private Permiso toDomain(PermisoEntity entity) {
-        return new Permiso(entity.getId(), entity.getNombre(), entity.getDescripcion());
+        return new Permiso(entity.getId(), entity.getNombre(), entity.getModulo(), entity.getAccion(),
+                entity.isEstandar(), entity.getDescripcion());
     }
 }

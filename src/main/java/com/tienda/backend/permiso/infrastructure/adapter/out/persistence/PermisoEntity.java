@@ -19,6 +19,15 @@ public class PermisoEntity {
     @Column(name = "nombre", nullable = false, length = 150)
     private String nombre;
 
+    @Column(name = "modulo", nullable = false, length = 40)
+    private String modulo;
+
+    @Column(name = "accion", nullable = false, length = 60)
+    private String accion;
+
+    @Column(name = "estandar", nullable = false)
+    private boolean estandar;
+
     @Column(name = "descripcion", columnDefinition = "TEXT")
     private String descripcion;
 }
