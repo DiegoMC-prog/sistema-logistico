@@ -11,7 +11,8 @@ import java.time.LocalDate;
 
 @Entity
 @Table(name = "pedidos_proveedor")
-@SQLDelete(sql = "UPDATE pedidos_proveedor SET deleted_at = NOW() WHERE id = ?")
+// Con @Version, Hibernate enlaza también la versión en el borrado: el SQL debe esperar ese segundo parámetro.
+@SQLDelete(sql = "UPDATE pedidos_proveedor SET deleted_at = NOW() WHERE id = ? AND version = ?")
 @SQLRestriction("deleted_at IS NULL")
 @AllArgsConstructor
 @NoArgsConstructor
