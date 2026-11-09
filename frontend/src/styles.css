@@ -1,0 +1,232 @@
+@import 'tailwindcss';
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme static {
+  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: ui-monospace, 'SFMono-Regular', monospace;
+
+  --color-brand: #1e293b;
+  --color-brand-hover: #334155;
+  --color-accent: #10b981;
+  --color-accent-soft: #d1fae5;
+  --color-canvas: #f8fafc;
+  --color-surface: #ffffff;
+  --color-subtle: #f1f5f9;
+  --color-table-head: #f8fafc;
+  --color-border: #e2e8f0;
+  --color-ink: #0f172a;
+  --color-muted: #64748b;
+  --color-faint: #94a3b8;
+  --color-sidebar-muted: #94a3b8;
+  --color-success: #10b981;
+  --color-success-dark: #047857;
+  --color-success-soft: #d1fae5;
+  --color-danger: #ef4444;
+  --color-danger-dark: #b91c1c;
+  --color-danger-soft: #fee2e2;
+  --color-warning: #f59e0b;
+  --color-warning-dark: #b45309;
+  --color-warning-soft: #fef3c7;
+  --color-info: #2563eb;
+  --color-info-soft: #dbeafe;
+  --color-overlay: rgb(15 23 42 / 55%);
+
+  --spacing-sidebar: 16rem;
+  --spacing-header: 5rem;
+  --spacing-product: 17rem;
+  --spacing-search: 28rem;
+  --spacing-filter: 13.5rem;
+  --spacing-status: 12rem;
+  --spacing-description: 18rem;
+  --spacing-textarea: 7rem;
+
+  --container-modal: 48rem;
+  --shadow-card: 0 1px 2px rgb(15 23 42 / 4%);
+
+  --animate-fade-in: fade-in 0.18s ease-out both;
+  --animate-pop-in: pop-in 0.24s cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-slide-up: slide-up 0.32s cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-toast-in: toast-in 0.34s cubic-bezier(0.16, 1, 0.3, 1) both;
+
+  @keyframes toast-in {
+    from { opacity: 0; transform: translateX(1.5rem); }
+    to { opacity: 1; transform: none; }
+  }
+
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes pop-in {
+    from { opacity: 0; transform: translateY(10px) scale(0.97); }
+    to { opacity: 1; transform: none; }
+  }
+  @keyframes slide-up {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: none; }
+  }
+}
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  html {
+    color-scheme: light;
+  }
+
+  html.dark {
+    color-scheme: dark;
+    --color-canvas: #0f172a;
+    --color-surface: #172033;
+    --color-subtle: #1e293b;
+    --color-table-head: #111b2d;
+    --color-border: #2b3a50;
+    --color-ink: #f8fafc;
+    --color-muted: #94a3b8;
+    --color-faint: #64748b;
+    --color-accent-soft: #064e3b;
+    --color-success-soft: #063f35;
+    --color-success-dark: #6ee7b7;
+    --color-danger-soft: #4c1d26;
+    --color-danger-dark: #fca5a5;
+    --color-warning-soft: #422f13;
+    --color-warning-dark: #fcd34d;
+    --color-info-soft: #172c55;
+    --color-info: #60a5fa;
+  }
+
+  body {
+    margin: 0;
+    min-width: 20rem;
+    min-height: 100vh;
+    background: var(--color-canvas);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
+  }
+
+  button:not(:disabled),
+  select {
+    cursor: pointer;
+  }
+}
+
+@layer components {
+  .field-label {
+    @apply text-sm font-semibold text-ink;
+  }
+
+  .field-input {
+    @apply w-full rounded-lg border border-border bg-surface px-3 text-sm text-ink outline-none transition placeholder:text-faint focus:border-accent focus:ring-3 focus:ring-accent-soft disabled:opacity-60;
+  }
+
+  input.field-input,
+  select.field-input {
+    @apply h-11;
+  }
+
+  /* Flecha del desplegable (gris neutro, legible en claro y oscuro) */
+  select.field-input {
+    @apply appearance-none pr-10;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    background-size: 1rem;
+  }
+
+  textarea.field-input {
+    @apply min-h-textarea resize-none py-3;
+  }
+
+  .field-input.ng-invalid.ng-touched {
+    @apply border-danger;
+  }
+
+  .alert-error {
+    @apply animate-slide-up rounded-lg border border-danger/30 bg-danger-soft px-4 py-3 text-sm font-semibold text-danger-dark;
+  }
+
+  /* Scroll del menú lateral: fino y oculto hasta pasar el cursor por encima. */
+  .sidebar-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: transparent transparent;
+  }
+  .sidebar-scroll:hover {
+    scrollbar-color: rgb(255 255 255 / 0.22) transparent;
+  }
+  .sidebar-scroll::-webkit-scrollbar {
+    width: 6px;
+  }
+  .sidebar-scroll::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .sidebar-scroll::-webkit-scrollbar-thumb {
+    background: transparent;
+    border-radius: 9999px;
+  }
+  .sidebar-scroll:hover::-webkit-scrollbar-thumb {
+    background: rgb(255 255 255 / 0.22);
+  }
+
+  .alert-success {
+    @apply animate-slide-up rounded-lg border border-success/30 bg-success-soft px-4 py-3 text-sm font-semibold text-success-dark;
+  }
+
+  /* Contenedor de página: el componente enrutado entra con un deslizamiento suave.
+     Solo "backwards": con "both/forwards" el navegador mantiene un transform activo y los
+     modales position:fixed quedarían atrapados dentro de la página en vez de cubrir la ventana. */
+  .page-enter > :not(router-outlet) {
+    display: block;
+    animation: slide-up 0.32s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+  }
+
+  /* Tabla de datos con el estilo del mockup */
+  .dt {
+    @apply w-full border-collapse text-left;
+  }
+  .dt thead tr {
+    @apply bg-table-head text-xs font-semibold uppercase tracking-wide text-muted;
+  }
+  .dt th {
+    @apply px-5 py-3;
+  }
+  .dt td {
+    @apply px-5 py-4;
+  }
+  .dt tbody {
+    @apply divide-y divide-border;
+  }
+  .dt tbody tr {
+    @apply transition hover:bg-subtle/60;
+    animation: fade-in 0.3s ease-out both;
+  }
+  /* Entrada escalonada de las primeras filas */
+  .dt tbody tr:nth-child(2) { animation-delay: 30ms; }
+  .dt tbody tr:nth-child(3) { animation-delay: 60ms; }
+  .dt tbody tr:nth-child(4) { animation-delay: 90ms; }
+  .dt tbody tr:nth-child(5) { animation-delay: 120ms; }
+  .dt tbody tr:nth-child(6) { animation-delay: 150ms; }
+  .dt tbody tr:nth-child(7) { animation-delay: 180ms; }
+  .dt tbody tr:nth-child(8) { animation-delay: 210ms; }
+  .dt tbody tr:nth-child(n + 9) { animation-delay: 240ms; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
