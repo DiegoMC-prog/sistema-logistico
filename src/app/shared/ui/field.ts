@@ -37,6 +37,7 @@ export class Field {
     if (c.errors['email']) return 'Ingresa un correo válido';
     if (c.errors['minlength']) return `Mínimo ${c.errors['minlength'].requiredLength} caracteres`;
     if (c.errors['maxlength']) return `Máximo ${c.errors['maxlength'].requiredLength} caracteres`;
+    if (c.errors['mismatch']) return 'Las contraseñas no coinciden';
     if (c.errors['min']) return `El valor mínimo es ${c.errors['min'].min}`;
     return 'Valor no válido';
   }

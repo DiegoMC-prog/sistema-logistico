@@ -4,7 +4,7 @@ import { Router } from '@angular/router';
 import { catchError, switchMap, throwError } from 'rxjs';
 import { AuthService } from './auth.service';
 
-const PUBLIC_PATHS = ['/auth/login', '/auth/refresh'];
+const PUBLIC_PATHS = ['/auth/login', '/auth/refresh', '/auth/olvide-password', '/auth/restablecer-password'];
 
 const withToken = (req: HttpRequest<unknown>, token: string | null) =>
   token ? req.clone({ setHeaders: { Authorization: `Bearer ${token}` } }) : req;

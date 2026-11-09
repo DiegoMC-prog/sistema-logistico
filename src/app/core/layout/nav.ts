@@ -1,5 +1,5 @@
 import { IconName } from '../../shared/ui/icon';
-import { PERMISOS, PERMISOS_CAJA } from '../auth/permisos';
+import { MODULOS, PERMISOS, PERMISOS_CAJA, todosDe } from '../auth/permisos';
 
 export interface NavItem {
   label: string;
@@ -30,43 +30,50 @@ export const NAV_SECTIONS: readonly NavSection[] = [
     ],
   },
   {
+    title: 'Compras',
+    items: [
+      { label: 'Pedidos', path: '/pedidos', icon: 'truck', permiso: PERMISOS.pedidoVer },
+      { label: 'Proveedores', path: '/proveedores', icon: 'users', permiso: PERMISOS.proveedorVer },
+    ],
+  },
+  {
     title: 'Inventario',
     items: [
       { label: 'Stock', path: '/inventario', icon: 'box', permiso: INVENTARIO },
       { label: 'Registrar movimiento', path: '/registrar-movimiento', icon: 'upload', permiso: PERMISOS.inventarioMover },
       { label: 'Movimientos', path: '/movimientos', icon: 'activity', permiso: INVENTARIO },
-      { label: 'Lotes', path: '/lotes', icon: 'tag', permiso: [PERMISOS.catalogo, PERMISOS.inventarioVer] },
+      { label: 'Lotes', path: '/lotes', icon: 'tag', permiso: [MODULOS.catalogo.editar, PERMISOS.inventarioVer] },
     ],
   },
   {
     title: 'Catálogo',
     items: [
-      { label: 'Productos', path: '/productos', icon: 'box', permiso: PERMISOS.catalogo },
-      { label: 'Categorías', path: '/categorias', icon: 'clipboard', permiso: PERMISOS.catalogo },
-      { label: 'Unidades de medida', path: '/unidades-medida', icon: 'grid', permiso: PERMISOS.catalogo },
-      { label: 'Lista de precios', path: '/precios', icon: 'dollar', permiso: PERMISOS.precio },
+      { label: 'Productos', path: '/productos', icon: 'box', permiso: todosDe(MODULOS.catalogo) },
+      { label: 'Categorías', path: '/categorias', icon: 'clipboard', permiso: todosDe(MODULOS.catalogo) },
+      { label: 'Unidades de medida', path: '/unidades-medida', icon: 'grid', permiso: todosDe(MODULOS.catalogo) },
+      { label: 'Lista de precios', path: '/precios', icon: 'dollar', permiso: todosDe(MODULOS.precio) },
     ],
   },
   {
     title: 'Clientes',
     items: [
-      { label: 'Clientes', path: '/clientes', icon: 'user', permiso: PERMISOS.cliente },
-      { label: 'Tipos de cliente', path: '/tipos-cliente', icon: 'tag', permiso: PERMISOS.cliente },
+      { label: 'Clientes', path: '/clientes', icon: 'user', permiso: todosDe(MODULOS.cliente) },
+      { label: 'Tipos de cliente', path: '/tipos-cliente', icon: 'tag', permiso: todosDe(MODULOS.cliente) },
     ],
   },
   {
     title: 'Configuración',
     items: [
-      { label: 'Cajas', path: '/cajas', icon: 'grid', permiso: PERMISOS.cajaGestionar },
-      { label: 'Depósitos', path: '/depositos', icon: 'location', permiso: PERMISOS.deposito },
-      { label: 'Métodos de pago', path: '/metodos-pago', icon: 'wallet', permiso: PERMISOS.metodoPago },
+      { label: 'Cajas', path: '/cajas', icon: 'grid', permiso: todosDe(MODULOS.caja) },
+      { label: 'Depósitos', path: '/depositos', icon: 'location', permiso: todosDe(MODULOS.deposito) },
+      { label: 'Métodos de pago', path: '/metodos-pago', icon: 'wallet', permiso: todosDe(MODULOS.metodoPago) },
     ],
   },
   {
     title: 'Administración',
     items: [
-      { label: 'Usuarios', path: '/usuarios', icon: 'users', permiso: PERMISOS.usuario },
-      { label: 'Roles y permisos', path: '/roles', icon: 'shield', permiso: PERMISOS.rol },
+      { label: 'Usuarios', path: '/usuarios', icon: 'users', permiso: PERMISOS.usuarioVer },
+      { label: 'Roles y permisos', path: '/roles', icon: 'shield', permiso: PERMISOS.rolVer },
     ],
   },
 ];

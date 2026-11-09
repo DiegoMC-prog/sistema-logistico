@@ -1,12 +1,20 @@
 import { Routes } from '@angular/router';
 import { authGuard, guestGuard, homeGuard, permissionGuard } from './core/auth/auth.guards';
-import { PERMISOS, PERMISOS_CAJA } from './core/auth/permisos';
+import { MODULOS, PERMISOS, PERMISOS_CAJA, todosDe } from './core/auth/permisos';
 
 export const routes: Routes = [
   {
     path: 'login',
     canActivate: [guestGuard],
     loadComponent: () => import('./features/auth/pages/login-page').then((m) => m.LoginPage),
+  },
+  {
+    path: 'olvide-password',
+    loadComponent: () => import('./features/auth/pages/olvide-password-page').then((m) => m.OlvidePasswordPage),
+  },
+  {
+    path: 'restablecer',
+    loadComponent: () => import('./features/auth/pages/restablecer-password-page').then((m) => m.RestablecerPasswordPage),
   },
   {
     path: 'cambiar-password',
@@ -58,8 +66,18 @@ export const routes: Routes = [
       },
       {
         path: 'lotes',
-        canActivate: [permissionGuard([PERMISOS.catalogo, PERMISOS.inventarioVer])],
+        canActivate: [permissionGuard([MODULOS.catalogo.editar, PERMISOS.inventarioVer])],
         loadChildren: () => import('./features/lotes/lotes.routes').then((m) => m.LOTES_ROUTES),
+      },
+      {
+        path: 'pedidos',
+        canActivate: [permissionGuard(PERMISOS.pedidoVer)],
+        loadChildren: () => import('./features/pedidos/pedidos.routes').then((m) => m.PEDIDOS_ROUTES),
+      },
+      {
+        path: 'proveedores',
+        canActivate: [permissionGuard(PERMISOS.proveedorVer)],
+        loadChildren: () => import('./features/proveedores/proveedores.routes').then((m) => m.PROVEEDORES_ROUTES),
       },
       {
         path: 'turnos',
@@ -68,58 +86,58 @@ export const routes: Routes = [
       },
       {
         path: 'cajas',
-        canActivate: [permissionGuard(PERMISOS.cajaGestionar)],
+        canActivate: [permissionGuard(todosDe(MODULOS.caja))],
         loadChildren: () => import('./features/cajas/cajas.routes').then((m) => m.CAJAS_ROUTES),
       },
       {
         path: 'clientes',
-        canActivate: [permissionGuard(PERMISOS.cliente)],
+        canActivate: [permissionGuard(todosDe(MODULOS.cliente))],
         loadChildren: () => import('./features/clientes/clientes.routes').then((m) => m.CLIENTES_ROUTES),
       },
       {
         path: 'tipos-cliente',
-        canActivate: [permissionGuard(PERMISOS.cliente)],
+        canActivate: [permissionGuard(todosDe(MODULOS.cliente))],
         loadChildren: () => import('./features/tipos-cliente/tipos-cliente.routes').then((m) => m.TIPOS_CLIENTE_ROUTES),
       },
       {
         path: 'precios',
-        canActivate: [permissionGuard(PERMISOS.precio)],
+        canActivate: [permissionGuard(todosDe(MODULOS.precio))],
         loadChildren: () => import('./features/precios/precios.routes').then((m) => m.PRECIOS_ROUTES),
       },
       {
         path: 'metodos-pago',
-        canActivate: [permissionGuard(PERMISOS.metodoPago)],
+        canActivate: [permissionGuard(todosDe(MODULOS.metodoPago))],
         loadChildren: () => import('./features/metodos-pago/metodos-pago.routes').then((m) => m.METODOS_PAGO_ROUTES),
       },
       {
         path: 'productos',
-        canActivate: [permissionGuard(PERMISOS.catalogo)],
+        canActivate: [permissionGuard(todosDe(MODULOS.catalogo))],
         loadChildren: () => import('./features/productos/productos.routes').then((m) => m.PRODUCTOS_ROUTES),
       },
       {
         path: 'categorias',
-        canActivate: [permissionGuard(PERMISOS.catalogo)],
+        canActivate: [permissionGuard(todosDe(MODULOS.catalogo))],
         loadChildren: () => import('./features/categorias/categorias.routes').then((m) => m.CATEGORIAS_ROUTES),
       },
       {
         path: 'unidades-medida',
-        canActivate: [permissionGuard(PERMISOS.catalogo)],
+        canActivate: [permissionGuard(todosDe(MODULOS.catalogo))],
         loadChildren: () =>
           import('./features/unidades-medida/unidades-medida.routes').then((m) => m.UNIDADES_MEDIDA_ROUTES),
       },
       {
         path: 'depositos',
-        canActivate: [permissionGuard(PERMISOS.deposito)],
+        canActivate: [permissionGuard(todosDe(MODULOS.deposito))],
         loadChildren: () => import('./features/depositos/depositos.routes').then((m) => m.DEPOSITOS_ROUTES),
       },
       {
         path: 'usuarios',
-        canActivate: [permissionGuard(PERMISOS.usuario)],
+        canActivate: [permissionGuard(PERMISOS.usuarioVer)],
         loadChildren: () => import('./features/usuarios/usuarios.routes').then((m) => m.USUARIOS_ROUTES),
       },
       {
         path: 'roles',
-        canActivate: [permissionGuard(PERMISOS.rol)],
+        canActivate: [permissionGuard(PERMISOS.rolVer)],
         loadChildren: () => import('./features/roles/roles.routes').then((m) => m.ROLES_ROUTES),
       },
     ],

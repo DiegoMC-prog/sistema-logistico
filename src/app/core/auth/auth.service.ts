@@ -3,6 +3,7 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { Observable, catchError, finalize, of, shareReplay, switchMap, tap, throwError } from 'rxjs';
 import { API_URL } from '../api/api-url';
+import { AccionesCrud, PermisosCrud } from './permisos';
 import { CambiarPasswordRequest, LoginRequest, Perfil, TokenResponse } from './auth.models';
 
 const ACCESS_KEY = 'auth.access';
@@ -56,6 +57,18 @@ export class AuthService {
       .pipe(switchMap(() => this.loadPerfil()));
   }
 
+  /** Pide el enlace de recuperación. Responde 202 siempre igual, exista o no la cuenta. */
+  olvidePassword(identificador: string): Observable<{ mensaje: string }> {
+    return this.http.post<{ mensaje: string }>(`${API_URL}/auth/olvide-password`, { identificador });
+  }
+
+  /** Fija la contraseña nueva con el token del correo (204). Cierra todas las sesiones del usuario. */
+  restablecerPassword(token: string, passwordNueva: string): Observable<void> {
+    return this.http.post<void>(`${API_URL}/auth/restablecer-password`, { token, passwordNueva }).pipe(
+      tap(() => this.clear()), // las sesiones de este navegador ya no sirven
+    );
+  }
+
   logout(): void {
     const refreshToken = this._refreshToken();
     const done = () => {
@@ -90,6 +103,16 @@ export class AuthService {
 
   hasPermission(permiso: string): boolean {
     return this._perfil()?.permisos.includes(permiso) ?? false;
+  }
+
+  /** Acciones permitidas sobre un módulo de CRUD: `protected readonly puede = inject(AuthService).crud(MODULOS.catalogo)`. */
+  crud(m: PermisosCrud): AccionesCrud {
+    return {
+      crear: this.hasPermission(m.crear),
+      editar: this.hasPermission(m.editar),
+      eliminar: this.hasPermission(m.eliminar),
+      activar: this.hasPermission(m.activar),
+    };
   }
 
   hasAnyPermission(permisos: string | readonly string[]): boolean {
