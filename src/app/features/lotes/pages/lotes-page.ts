@@ -4,7 +4,7 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { errorMessage } from '../../../core/api/api-error';
 import { PagedList } from '../../../core/api/paged-list';
 import { AuthService } from '../../../core/auth/auth.service';
-import { PERMISOS } from '../../../core/auth/permisos';
+import { MODULOS } from '../../../core/auth/permisos';
 import { Btn, IconBtn } from '../../../shared/ui/button';
 import { Card } from '../../../shared/ui/card';
 import { ConfirmDialog } from '../../../shared/ui/confirm-dialog';
@@ -46,7 +46,7 @@ import { LotesService } from '../data/lotes.service';
           } @else {
             <div class="overflow-x-auto">
               <table class="dt">
-                <thead><tr><th>Producto</th><th>Lote</th><th>Vencimiento</th><th class="text-right">Costo unitario</th><th class="text-right">Desc. vencimiento</th>@if (puedeEditar) {<th class="text-right">Acciones</th>}</tr></thead>
+                <thead><tr><th>Producto</th><th>Lote</th><th>Vencimiento</th><th class="text-right">Costo unitario</th><th class="text-right">Desc. vencimiento</th>@if (puedeEditar || puedeEliminar) {<th class="text-right">Acciones</th>}</tr></thead>
                 <tbody>
                   @for (l of d.content; track l.id) {
                     <tr>
@@ -55,11 +55,11 @@ import { LotesService } from '../data/lotes.service';
                       <td class="text-sm text-muted">{{ l.fechaVencimiento ? (l.fechaVencimiento | date: 'dd/MM/yyyy') : 'Sin vencimiento' }}</td>
                       <td class="text-right text-sm">{{ l.costoUnitarioCompra | number: '1.2-4' }}</td>
                       <td class="text-right text-sm">{{ (l.porcentajeDescuentoVencimiento ?? 0) | number: '1.0-2' }}%</td>
-                      @if (puedeEditar) {
+                      @if (puedeEditar || puedeEliminar) {
                         <td>
                           <div class="flex justify-end">
-                            <button appIconBtn icon="edit" [label]="'Editar lote ' + l.numeroLote" (click)="openForm(l)"></button>
-                            <button appIconBtn icon="trash" danger [label]="'Eliminar lote ' + l.numeroLote" (click)="toDelete.set(l)"></button>
+                            @if (puedeEditar) { <button appIconBtn icon="edit" [label]="'Editar lote ' + l.numeroLote" (click)="openForm(l)"></button> }
+                            @if (puedeEliminar) { <button appIconBtn icon="trash" danger [label]="'Eliminar lote ' + l.numeroLote" (click)="toDelete.set(l)"></button> }
                           </div>
                         </td>
                       }
@@ -113,8 +113,10 @@ import { LotesService } from '../data/lotes.service';
 export class LotesPage {
   private readonly service = inject(LotesService);
   private readonly fb = inject(FormBuilder).nonNullable;
-  /** Editar y eliminar exigen CATALOGO_GESTIONAR; con INVENTARIO_VER solo se consulta. */
-  protected readonly puedeEditar = inject(AuthService).hasPermission(PERMISOS.catalogo);
+  /** Editar exige CATALOGO_EDITAR y eliminar CATALOGO_ELIMINAR; con INVENTARIO_VER solo se consulta. */
+  private readonly auth = inject(AuthService);
+  protected readonly puedeEditar = this.auth.hasPermission(MODULOS.catalogo.editar);
+  protected readonly puedeEliminar = this.auth.hasPermission(MODULOS.catalogo.eliminar);
 
   protected readonly list = new PagedList<Lote, LoteFilters>((f) => this.service.list(f));
   protected readonly editing = signal<Lote | null>(null);
