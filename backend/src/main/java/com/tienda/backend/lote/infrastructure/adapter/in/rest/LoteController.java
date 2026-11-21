@@ -1,5 +1,8 @@
 package com.tienda.backend.lote.infrastructure.adapter.in.rest;
 
+import com.tienda.backend.lote.application.model.AjusteCostoLote;
+import com.tienda.backend.lote.application.port.in.ConsultarAjustesCostoUseCase;
+import java.util.List;
 import com.tienda.backend.lote.application.model.LoteFiltro;
 import com.tienda.backend.lote.application.port.in.EditarLoteUseCase;
 import com.tienda.backend.lote.application.port.in.EliminarLoteUseCase;
@@ -25,6 +28,7 @@ public class LoteController {
     private final ListarLoteUseCase listarLoteUseCase;
     private final ObtenerLoteUseCase obtenerLoteUseCase;
     private final EliminarLoteUseCase eliminarLoteUseCase;
+    private final ConsultarAjustesCostoUseCase consultarAjustesCostoUseCase;
 
     @GetMapping
     public ResponseEntity<PageResult<LoteResponse>> listar(
@@ -41,6 +45,12 @@ public class LoteController {
     @GetMapping("/{id}")
     public ResponseEntity<LoteResponse> obtener(@PathVariable Long id) {
         return ResponseEntity.ok(LoteResponse.from(obtenerLoteUseCase.obtener(id)));
+    }
+
+    /** R10: correcciones del costo del lote, la más reciente primero. */
+    @GetMapping("/{id}/ajustes-costo")
+    public ResponseEntity<List<AjusteCostoLote>> ajustesCosto(@PathVariable Long id) {
+        return ResponseEntity.ok(consultarAjustesCostoUseCase.ajustesCosto(id));
     }
 
     @PutMapping("/{id}")

@@ -26,9 +26,14 @@ public record EditarLoteRequest(
         @PositiveOrZero(message = "El descuento por vencimiento no puede ser negativo")
         @DecimalMax(value = "100", message = "El descuento por vencimiento no puede superar 100")
         @Digits(integer = 3, fraction = 4, message = "El descuento admite hasta 3 enteros y 4 decimales")
-        BigDecimal porcentajeDescuentoVencimiento
+        BigDecimal porcentajeDescuentoVencimiento,
+
+        /** R10: obligatorio si se cambia el costo unitario de compra. */
+        @Size(max = 500, message = "El motivo del ajuste de costo no debe tener mas de 500 caracteres")
+        String motivoAjusteCosto
 ) {
     public EditarLoteComando toComando() {
-        return new EditarLoteComando(numeroLote, fechaVencimiento, costoUnitarioCompra, porcentajeDescuentoVencimiento);
+        return new EditarLoteComando(numeroLote, fechaVencimiento, costoUnitarioCompra, porcentajeDescuentoVencimiento,
+                motivoAjusteCosto);
     }
 }

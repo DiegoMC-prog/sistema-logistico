@@ -14,7 +14,7 @@ import { Modal } from '../../../shared/ui/modal';
 import { Paginator } from '../../../shared/ui/paginator';
 import { SearchInput } from '../../../shared/ui/search-input';
 import { TableSkeleton } from '../../../shared/ui/table-skeleton';
-import { Lote, LoteFilters } from '../data/lote.model';
+import { AjusteCostoLote, Lote, LoteFilters } from '../data/lote.model';
 import { LotesService } from '../data/lotes.service';
 
 @Component({
@@ -93,6 +93,29 @@ import { LotesService } from '../data/lotes.service';
             <app-field label="% descuento por vencimiento" [control]="form.controls.porcentajeDescuentoVencimiento" optional>
               <input type="number" step="any" min="0" max="100" class="field-input" formControlName="porcentajeDescuentoVencimiento" />
             </app-field>
+            @if (cambiaCosto()) {
+              <app-field class="sm:col-span-2" label="Motivo del ajuste de costo" [control]="form.controls.motivoAjusteCosto" required>
+                <textarea class="field-input min-h-16 py-2" maxlength="500" formControlName="motivoAjusteCosto"
+                  placeholder="Por ejemplo: la factura del proveedor indica otro costo"></textarea>
+              </app-field>
+              <p class="text-xs text-muted sm:col-span-2">
+                El costo de {{ l.costoUnitarioCompra | number: '1.2-4' }} pasa a {{ form.controls.costoUnitarioCompra.value | number: '1.2-4' }}.
+                La corrección queda registrada con su usuario y la fecha; las ventas ya hechas conservan su costo.
+              </p>
+            }
+            @if (ajustes().length > 0) {
+              <div class="sm:col-span-2">
+                <p class="field-label mb-2">Correcciones anteriores del costo</p>
+                <ul class="divide-y divide-border rounded-lg border border-border text-sm">
+                  @for (a of ajustes(); track a.id) {
+                    <li class="p-3">
+                      <p class="text-ink">{{ a.costoAnterior | number: '1.2-4' }} → <span class="font-semibold">{{ a.costoNuevo | number: '1.2-4' }}</span> · {{ a.motivo }}</p>
+                      <p class="text-xs text-muted">{{ a.fecha | date: 'dd/MM/yyyy HH:mm' }} por {{ a.usuario }}</p>
+                    </li>
+                  }
+                </ul>
+              </div>
+            }
           </div>
         </form>
         <ng-container modal-footer>
@@ -131,7 +154,23 @@ export class LotesPage {
     fechaVencimiento: [''],
     costoUnitarioCompra: [0, [Validators.required, Validators.min(0)]],
     porcentajeDescuentoVencimiento: [null as number | null, [Validators.min(0), Validators.max(100)]],
+    motivoAjusteCosto: ['', [Validators.maxLength(500)]],
   });
+
+  /** R10: historial de correcciones del costo del lote que se edita. */
+  protected readonly ajustes = signal<AjusteCostoLote[]>([]);
+  private readonly costoActual = signal<number | null>(null);
+
+  /** true si el costo del formulario difiere del guardado: entonces se exige el motivo del ajuste. */
+  protected cambiaCosto(): boolean {
+    const original = this.editing()?.costoUnitarioCompra;
+    const nuevo = this.costoActual();
+    return original != null && nuevo != null && Number(nuevo) !== Number(original);
+  }
+
+  constructor() {
+    this.form.controls.costoUnitarioCompra.valueChanges.subscribe((v) => this.costoActual.set(v));
+  }
 
   protected openForm(l: Lote): void {
     this.formError.set(null);
@@ -140,8 +179,12 @@ export class LotesPage {
       fechaVencimiento: l.fechaVencimiento ?? '',
       costoUnitarioCompra: l.costoUnitarioCompra,
       porcentajeDescuentoVencimiento: l.porcentajeDescuentoVencimiento,
+      motivoAjusteCosto: '',
     });
+    this.costoActual.set(l.costoUnitarioCompra);
+    this.ajustes.set([]);
     this.editing.set(l);
+    this.service.ajustesCosto(l.id).subscribe({ next: (a) => this.ajustes.set(a), error: () => this.ajustes.set([]) });
   }
 
   protected save(): void {
@@ -149,6 +192,9 @@ export class LotesPage {
     if (!l) return;
     if (this.form.invalid) return this.form.markAllAsTouched();
     const v = this.form.getRawValue();
+    if (this.cambiaCosto() && v.motivoAjusteCosto.trim().length < 5) {
+      return void this.formError.set('Indica el motivo del ajuste de costo (al menos 5 caracteres): queda registrado');
+    }
     this.saving.set(true);
     this.formError.set(null);
     this.service
@@ -157,6 +203,7 @@ export class LotesPage {
         fechaVencimiento: v.fechaVencimiento || undefined,
         costoUnitarioCompra: v.costoUnitarioCompra,
         porcentajeDescuentoVencimiento: v.porcentajeDescuentoVencimiento ?? undefined,
+        ...(this.cambiaCosto() ? { motivoAjusteCosto: v.motivoAjusteCosto.trim() } : {}),
       })
       .subscribe({
         next: () => {

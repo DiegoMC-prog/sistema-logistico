@@ -8,6 +8,8 @@ public record EditarLoteComando(
         String numeroLote,
         LocalDate fechaVencimiento,
         BigDecimal costoUnitarioCompra,
-        BigDecimal porcentajeDescuentoVencimiento
+        BigDecimal porcentajeDescuentoVencimiento,
+        /** R10: obligatorio si cambia el costo; queda en la nota de ajuste auditada. */
+        String motivoAjusteCosto
 ) {
 }
