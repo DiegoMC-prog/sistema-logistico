@@ -1,7 +1,12 @@
 package com.tienda.backend.abastecimiento.infrastructure.adapter.in.rest;
 
 import com.tienda.backend.abastecimiento.application.model.CalculoResumen;
+import com.tienda.backend.abastecimiento.application.model.CostoFiltro;
 import com.tienda.backend.abastecimiento.application.model.CrearPedidosComando;
+import com.tienda.backend.abastecimiento.application.model.HistoricoCosto;
+import com.tienda.backend.abastecimiento.application.model.VariacionCostoResumen;
+import com.tienda.backend.abastecimiento.application.model.VariacionProveedor;
+import com.tienda.backend.abastecimiento.application.port.in.ConsultarCostosUseCase;
 import com.tienda.backend.abastecimiento.application.model.GuardarParametrosComando;
 import com.tienda.backend.abastecimiento.application.model.OrigenCalculo;
 import com.tienda.backend.abastecimiento.application.model.ParametrosProducto;
@@ -46,6 +51,7 @@ public class AbastecimientoController {
     private final ConsultarSugerenciasUseCase consultarUseCase;
     private final GestionarSugerenciasUseCase gestionarUseCase;
     private final ParametrosReordenUseCase parametrosUseCase;
+    private final ConsultarCostosUseCase costosUseCase;
 
     /** Último recálculo; 204 si todavía no se ejecutó ninguno. */
     @GetMapping("/calculo")
@@ -100,5 +106,31 @@ public class AbastecimientoController {
         return ResponseEntity.ok(parametrosUseCase.guardarParametros(productoId, new GuardarParametrosComando(
                 request.costoPedido(), request.costoAlmacenPct(), request.nivelServicio(), request.proveedorId(),
                 request.activo() == null || request.activo())));
+    }
+
+    // ------------------------------------------------------------------ histórico de costos (RF-35)
+
+    /** Variación de costo por par proveedor-producto, primero las mayores alzas a 90 días. */
+    @GetMapping("/costos/variaciones")
+    public ResponseEntity<PageResult<VariacionCostoResumen>> variaciones(
+            @RequestParam(required = false) Long proveedorId,
+            @RequestParam(required = false) Long productoId,
+            @RequestParam(required = false) String search,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        return ResponseEntity.ok(costosUseCase.variaciones(new CostoFiltro(proveedorId, productoId, search), page, size));
+    }
+
+    /** Compras confirmadas de un producto, de la más reciente a la más antigua. */
+    @GetMapping("/costos/historial")
+    public ResponseEntity<List<HistoricoCosto>> historialCostos(@RequestParam Long productoId,
+                                                                @RequestParam(required = false) Long proveedorId) {
+        return ResponseEntity.ok(costosUseCase.historial(productoId, proveedorId));
+    }
+
+    /** Indicador de variación de precios por proveedor. */
+    @GetMapping("/costos/proveedores")
+    public ResponseEntity<List<VariacionProveedor>> variacionProveedores() {
+        return ResponseEntity.ok(costosUseCase.resumenProveedores());
     }
 }

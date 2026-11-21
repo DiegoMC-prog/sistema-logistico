@@ -6,12 +6,16 @@ import { Page } from '../../../core/api/page.model';
 import { withToast } from '../../../core/ui/toast';
 import {
   CalculoReorden,
+  CostoFiltro,
+  HistoricoCosto,
   CrearPedidosRequest,
   ParametrosReorden,
   ParametrosReordenRequest,
   PedidoGenerado,
   Sugerencia,
   SugerenciaFiltro,
+  VariacionCosto,
+  VariacionProveedor,
 } from './abastecimiento.model';
 
 @Injectable({ providedIn: 'root' })
@@ -44,6 +48,19 @@ export class AbastecimientoService {
 
   parametros(productoId: number): Observable<ParametrosReorden> {
     return this.http.get<ParametrosReorden>(`${this.url}/parametros/${productoId}`);
+  }
+
+  /** RF-35: variación de costo por proveedor y producto, primero las mayores alzas. */
+  variacionesCosto(filtro: CostoFiltro): Observable<Page<VariacionCosto>> {
+    return this.http.get<Page<VariacionCosto>>(`${this.url}/costos/variaciones`, { params: toParams(filtro) });
+  }
+
+  historialCostos(productoId: number, proveedorId?: number): Observable<HistoricoCosto[]> {
+    return this.http.get<HistoricoCosto[]>(`${this.url}/costos/historial`, { params: toParams({ productoId, proveedorId }) });
+  }
+
+  variacionProveedores(): Observable<VariacionProveedor[]> {
+    return this.http.get<VariacionProveedor[]>(`${this.url}/costos/proveedores`);
   }
 
   guardarParametros(productoId: number, body: ParametrosReordenRequest): Observable<ParametrosReorden> {

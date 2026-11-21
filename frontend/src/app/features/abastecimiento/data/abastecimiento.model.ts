@@ -43,6 +43,10 @@ export interface Sugerencia {
   estandar: ResultadoEscenario;
   optimista: ResultadoEscenario;
   motivo: string;
+  /** Variación reciente del costo del proveedor como fracción (0.08 = +8 %); null sin datos. */
+  variacionCosto: number | null;
+  /** Días que se adelantó la compra por alza de costo (0 = no se adelantó). */
+  diasAnticipo: number;
 }
 
 export interface CalculoReorden {
@@ -103,6 +107,60 @@ export interface ParametrosReordenRequest {
   nivelServicio: number | null;
   proveedorId: number | null;
   activo: boolean;
+}
+
+/** Evolución del costo de un producto con un proveedor (RF-35). Variaciones en fracción; null sin datos. */
+export interface VariacionCosto {
+  proveedorId: number;
+  proveedor: string;
+  productoId: number;
+  producto: string;
+  categoria: string;
+  compras: number;
+  primeraCompra: string;
+  ultimaCompra: string;
+  ultimoCosto: number;
+  costoMinimo: number;
+  costoMaximo: number;
+  variacion30: number | null;
+  variacion90: number | null;
+  /** Supera el umbral de alza del motor de reorden. */
+  alza: boolean;
+}
+
+export interface HistoricoCosto {
+  detalleId: number;
+  pedidoId: number;
+  numeroPedido: string;
+  estadoPedido: string;
+  proveedorId: number;
+  proveedor: string;
+  productoId: number;
+  producto: string;
+  categoria: string;
+  fecha: string;
+  costoUnitario: number;
+  cantidad: number;
+  /** Contra la compra anterior del mismo producto al mismo proveedor. */
+  variacionAnterior: number | null;
+}
+
+export interface VariacionProveedor {
+  proveedorId: number;
+  proveedor: string;
+  productos: number;
+  productosConAlza: number;
+  variacionMedia30: number | null;
+  variacionMedia90: number | null;
+  mayorAlza90: number | null;
+}
+
+export interface CostoFiltro {
+  proveedorId?: number;
+  productoId?: number;
+  search?: string;
+  page?: number;
+  size?: number;
 }
 
 export const ESTADO_LABEL: Record<EstadoSugerencia, string> = {

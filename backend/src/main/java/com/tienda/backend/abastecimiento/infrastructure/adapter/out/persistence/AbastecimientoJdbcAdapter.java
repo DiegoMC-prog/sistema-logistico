@@ -170,8 +170,8 @@ public class AbastecimientoJdbcAdapter implements AbastecimientoRepositoryPort {
                 eoq_pesimista, stock_seguridad_pesimista, punto_reorden_pesimista, cantidad_pesimista,
                 eoq_estandar, stock_seguridad_estandar, punto_reorden_estandar, cantidad_estandar,
                 eoq_optimista, stock_seguridad_optimista, punto_reorden_optimista, cantidad_optimista,
-                motivo)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""";
+                motivo, variacion_costo, dias_anticipo)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""";
 
     @Override
     public Long guardarCalculo(OrigenCalculo origen, String usuario, int diasVentana, int historialMinimoDias,
@@ -220,7 +220,15 @@ public class AbastecimientoJdbcAdapter implements AbastecimientoRepositoryPort {
                 ps.setBigDecimal(c++, bd(e.cantidad()));
             }
             String motivo = s.motivo();
-            ps.setString(c, motivo.length() > 1000 ? motivo.substring(0, 1000) : motivo);
+            ps.setString(c++, motivo.length() > 1000 ? motivo.substring(0, 1000) : motivo);
+            Double variacion = s.variacionCosto();
+            // DECIMAL(9, 4): una variación absurda (costo base casi 0) no debe romper el guardado
+            if (variacion == null || variacion.isNaN() || variacion.isInfinite() || Math.abs(variacion) >= 99_999) {
+                ps.setNull(c++, Types.DECIMAL);
+            } else {
+                ps.setBigDecimal(c++, bd(variacion));
+            }
+            ps.setInt(c, s.diasAnticipo());
         });
         return calculoId;
     }
@@ -287,7 +295,8 @@ public class AbastecimientoJdbcAdapter implements AbastecimientoRepositoryPort {
                 num(rs, "costo_unitario"), num(rs, "costo_pedido"), num(rs, "costo_almacen_anual"),
                 num(rs, "nivel_servicio"), num(rs, "factor_z"), num(rs, "stock_actual"), num(rs, "en_transito"),
                 num(rs, "vida_util_dias"), escenario(rs, "pesimista"), escenario(rs, "estandar"),
-                escenario(rs, "optimista"), rs.getString("motivo"));
+                escenario(rs, "optimista"), rs.getString("motivo"), num(rs, "variacion_costo"),
+                rs.getInt("dias_anticipo"));
     };
 
     private static EscenarioResumen escenario(ResultSet rs, String sufijo) throws SQLException {

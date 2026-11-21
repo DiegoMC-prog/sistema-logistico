@@ -66,6 +66,7 @@ const COLLAPSED_KEY = 'nav.collapsed';
                     <a
                       [routerLink]="item.path"
                       routerLinkActive="bg-white/10 !text-white"
+                      [routerLinkActiveOptions]="{ exact: item.exact ?? false }"
                       class="flex h-10 items-center gap-3 rounded-lg px-3 text-sm font-medium text-sidebar-muted transition hover:bg-white/5 hover:text-white"
                       (click)="menuOpen.set(false)"
                     >

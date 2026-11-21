@@ -17,7 +17,10 @@ import com.tienda.backend.abastecimiento.application.port.in.ConsultarSugerencia
 import com.tienda.backend.abastecimiento.application.port.in.GestionarSugerenciasUseCase;
 import com.tienda.backend.abastecimiento.application.port.in.ParametrosReordenUseCase;
 import com.tienda.backend.abastecimiento.application.port.in.RecalcularSugerenciasUseCase;
+import com.tienda.backend.abastecimiento.application.model.CostoFiltro;
+import com.tienda.backend.abastecimiento.application.model.HistoricoCosto;
 import com.tienda.backend.abastecimiento.application.port.out.AbastecimientoRepositoryPort;
+import com.tienda.backend.abastecimiento.application.port.out.CostoRepositoryPort;
 import com.tienda.backend.abastecimiento.application.port.out.PedidoCompraPort;
 import com.tienda.backend.abastecimiento.domain.exception.ParametrosReordenInvalidosException;
 import com.tienda.backend.abastecimiento.domain.exception.SugerenciaNoConvertibleException;
@@ -28,6 +31,7 @@ import com.tienda.backend.abastecimiento.domain.model.Escenario;
 import com.tienda.backend.abastecimiento.domain.model.ParametrosReorden;
 import com.tienda.backend.abastecimiento.domain.model.SugerenciaCalculada;
 import com.tienda.backend.abastecimiento.domain.service.CalculadoraReorden;
+import com.tienda.backend.abastecimiento.domain.service.VariacionCosto;
 import com.tienda.backend.producto.domain.exception.ProductoNotFoundException;
 import com.tienda.backend.shared.application.model.PageResult;
 import com.tienda.backend.shared.application.port.out.UsuarioActualPort;
@@ -58,18 +62,30 @@ public class AbastecimientoService implements RecalcularSugerenciasUseCase, Cons
     private final AbastecimientoRepositoryPort repositorio;
     private final PedidoCompraPort pedidoCompraPort;
     private final UsuarioActualPort usuarioActualPort;
+    private final CostoRepositoryPort costoRepositorio;
     private final ConfigReorden config;
+    /** RF-35: ventana para medir la variación del costo, alza mínima y días que se adelanta la compra. */
+    private final int alzaVentanaDias;
+    private final double alzaUmbral;
+    private final int alzaAnticipoDias;
     private final CalculadoraReorden calculadora = new CalculadoraReorden();
 
     public AbastecimientoService(AbastecimientoRepositoryPort repositorio, PedidoCompraPort pedidoCompraPort,
-                                 UsuarioActualPort usuarioActualPort,
+                                 UsuarioActualPort usuarioActualPort, CostoRepositoryPort costoRepositorio,
                                  @Value("${app.reorden.costo-pedido:50}") double costoPedido,
                                  @Value("${app.reorden.costo-almacen-pct:0.25}") double costoAlmacenPct,
                                  @Value("${app.reorden.nivel-servicio:0.95}") double nivelServicio,
                                  @Value("${app.reorden.dias-ventana:90}") int diasVentana,
                                  @Value("${app.reorden.historial-minimo-dias:90}") int historialMinimoDias,
-                                 @Value("${app.reorden.lead-time-defecto-dias:7}") double leadTimeDefectoDias) {
+                                 @Value("${app.reorden.lead-time-defecto-dias:7}") double leadTimeDefectoDias,
+                                 @Value("${app.reorden.alza-ventana-dias:90}") int alzaVentanaDias,
+                                 @Value("${app.reorden.alza-umbral:0.05}") double alzaUmbral,
+                                 @Value("${app.reorden.alza-anticipo-dias:7}") int alzaAnticipoDias) {
         this.repositorio = repositorio;
+        this.costoRepositorio = costoRepositorio;
+        this.alzaVentanaDias = Math.max(alzaVentanaDias, 1);
+        this.alzaUmbral = Math.max(alzaUmbral, 0);
+        this.alzaAnticipoDias = Math.max(alzaAnticipoDias, 0);
         this.pedidoCompraPort = pedidoCompraPort;
         this.usuarioActualPort = usuarioActualPort;
         // Valida los globales al arrancar: una configuración inválida debe fallar pronto, no en la tarea nocturna
@@ -96,6 +112,7 @@ public class AbastecimientoService implements RecalcularSugerenciasUseCase, Cons
         Map<Long, Double> stock = repositorio.stockVendible(hoy);
         Map<Long, Double> transito = repositorio.enTransito();
         Map<Long, Double> vidaUtil = repositorio.vidaUtilMedia(haceUnAnio);
+        Map<String, Double> variacionCosto = variacionesCosto(hoy);
 
         List<SugerenciaCalculada> resultados = new ArrayList<>(productos.size());
         for (ProductoReorden producto : productos) {
@@ -125,13 +142,31 @@ public class AbastecimientoService implements RecalcularSugerenciasUseCase, Cons
             DatosReorden datos = new DatosReorden(id, producto.perecedero(), diasHistorial, config.historialMinimoDias(),
                     serie, proveedorId == null ? List.of() : leadTimes.getOrDefault(proveedorId, List.of()),
                     config.leadTimeDefectoDias(), proveedorId, costo, stock.getOrDefault(id, 0.0),
-                    transito.getOrDefault(id, 0.0), producto.perecedero() ? vidaUtil.get(id) : null, parametros);
+                    transito.getOrDefault(id, 0.0), producto.perecedero() ? vidaUtil.get(id) : null, parametros,
+                    proveedorId == null ? null : variacionCosto.get(proveedorId + ":" + id), alzaUmbral,
+                    alzaAnticipoDias);
             resultados.add(calculadora.calcular(datos));
         }
 
         Long calculoId = repositorio.guardarCalculo(origen, usuarioActualPort.nombre(), config.diasVentana(),
                 config.historialMinimoDias(), resultados);
         return repositorio.calculo(calculoId).orElseThrow();
+    }
+
+    /** "proveedorId:productoId" -> variación del costo en la ventana de alzas (solo los pares con variación). */
+    private Map<String, Double> variacionesCosto(LocalDate hoy) {
+        Map<String, List<HistoricoCosto>> grupos = costoRepositorio.historial(new CostoFiltro(null, null, null),
+                        hoy.minusDays(CostoProveedorService.DIAS_HISTORICO)).stream()
+                .collect(Collectors.groupingBy(h -> h.proveedorId() + ":" + h.productoId(), LinkedHashMap::new,
+                        Collectors.toList()));
+        Map<String, Double> out = new java.util.HashMap<>();
+        grupos.forEach((par, grupo) -> {
+            Double v = VariacionCosto.calcular(CostoProveedorService.puntos(grupo), hoy, alzaVentanaDias);
+            if (v != null) {
+                out.put(par, v);
+            }
+        });
+        return out;
     }
 
     /** Último costo pactado con el proveedor elegido; si nunca se le compró, el último de cualquiera; si no, el del lote. */

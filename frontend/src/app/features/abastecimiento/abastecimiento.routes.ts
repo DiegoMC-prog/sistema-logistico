@@ -9,4 +9,12 @@ export const ABASTECIMIENTO_ROUTES: Routes = [
     },
     loadComponent: () => import('./pages/sugerencias-page').then((m) => m.SugerenciasPage),
   },
+  {
+    path: 'costos',
+    data: {
+      title: 'Costos de proveedores',
+      subtitle: 'Histórico de costos de compra y su variación por proveedor',
+    },
+    loadComponent: () => import('./pages/costos-page').then((m) => m.CostosPage),
+  },
 ];

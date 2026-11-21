@@ -202,6 +202,11 @@ const TONO_ACCION: Record<AccionSugerencia, BadgeTone> = {
                       <td>
                         <div class="flex flex-col items-start gap-1">
                           <app-badge [tone]="tonoEstado[s.estado]">{{ etiquetaEstado[s.estado] }}</app-badge>
+                          @if (s.diasAnticipo > 0) {
+                            <app-badge tone="danger" [attr.title]="'El costo del proveedor subió: se adelanta la compra ' + s.diasAnticipo + ' días'">
+                              Alza {{ s.variacionCosto! * 100 | number: '1.0-1' }} %
+                            </app-badge>
+                          }
                           @if (s.accion !== 'PENDIENTE') {
                             @if (s.pedidoId) {
                               <a class="text-xs font-semibold text-accent hover:underline" [routerLink]="['/pedidos', s.pedidoId]">{{ s.numeroPedido }}</a>
@@ -232,6 +237,13 @@ const TONO_ACCION: Record<AccionSugerencia, BadgeTone> = {
                               <div><dt class="text-xs text-muted">Demanda diaria (σ)</dt><dd class="font-semibold text-ink">{{ s.demandaDiaria | number: '1.0-2' }} ({{ s.desviacionDemanda | number: '1.0-2' }})</dd></div>
                               <div><dt class="text-xs text-muted">Lead time, días (σ)</dt><dd class="font-semibold text-ink">{{ s.leadTimeDias | number: '1.0-1' }} ({{ s.desviacionLeadTime | number: '1.0-1' }}) · {{ s.muestrasLeadTime }} pedidos</dd></div>
                               <div><dt class="text-xs text-muted">Último costo de compra</dt><dd class="font-semibold text-ink">{{ s.costoUnitario | number: '1.2-4' }}</dd></div>
+                              <div>
+                                <dt class="text-xs text-muted">Variación reciente del costo</dt>
+                                <dd class="font-semibold" [class]="s.variacionCosto == null ? 'text-muted' : s.variacionCosto > 0 ? 'text-danger' : 'text-success'">
+                                  @if (s.variacionCosto == null) { Sin datos } @else { {{ s.variacionCosto > 0 ? '+' : '' }}{{ s.variacionCosto * 100 | number: '1.0-1' }} % }
+                                  @if (s.diasAnticipo > 0) { <span class="text-xs font-normal text-muted">· compra adelantada {{ s.diasAnticipo }} días</span> }
+                                </dd>
+                              </div>
                               <div><dt class="text-xs text-muted">Costo por pedido (S)</dt><dd class="font-semibold text-ink">{{ s.costoPedido | number: '1.2-2' }}</dd></div>
                               <div><dt class="text-xs text-muted">Almacenaje anual (H)</dt><dd class="font-semibold text-ink">{{ s.costoAlmacenAnual | number: '1.2-4' }}</dd></div>
                               <div><dt class="text-xs text-muted">Nivel de servicio (z)</dt><dd class="font-semibold text-ink">{{ s.nivelServicio * 100 | number: '1.0-1' }} % ({{ s.factorZ | number: '1.2-2' }})</dd></div>

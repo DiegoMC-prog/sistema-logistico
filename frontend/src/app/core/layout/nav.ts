@@ -7,6 +7,8 @@ export interface NavItem {
   icon: IconName;
   /** Permiso (o cualquiera de la lista) requerido para ver la sección. */
   permiso: string | readonly string[];
+  /** Resaltar solo en la ruta exacta (cuando otro ítem del menú cuelga de esta ruta). */
+  exact?: boolean;
 }
 
 export interface NavSection {
@@ -32,7 +34,8 @@ export const NAV_SECTIONS: readonly NavSection[] = [
   {
     title: 'Compras',
     items: [
-      { label: 'Sugerencias de reorden', path: '/abastecimiento', icon: 'activity', permiso: [PERMISOS.reordenVer, PERMISOS.reordenGestionar] },
+      { label: 'Sugerencias de reorden', path: '/abastecimiento', icon: 'activity', permiso: [PERMISOS.reordenVer, PERMISOS.reordenGestionar], exact: true },
+      { label: 'Costos de proveedores', path: '/abastecimiento/costos', icon: 'dollar', permiso: [PERMISOS.reordenVer, PERMISOS.reordenGestionar] },
       { label: 'Pedidos', path: '/pedidos', icon: 'truck', permiso: PERMISOS.pedidoVer },
       { label: 'Proveedores', path: '/proveedores', icon: 'users', permiso: PERMISOS.proveedorVer },
     ],

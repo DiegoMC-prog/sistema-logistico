@@ -21,6 +21,8 @@ import java.util.Locale;
  *   <li>Punto de reorden ROP = d·L + SS.</li>
  *   <li>Si la posición de inventario (stock + en camino) ≤ ROP se pide hasta ROP + EOQ.</li>
  *   <li>Perecederos: no se sugiere más de lo que se alcanza a vender antes de que venza el lote nuevo.</li>
+ *   <li>Alza de costos (RF-35): si el último costo del proveedor subió al menos el umbral en la ventana reciente,
+ *       el punto de reorden suma d·N días (se compra N días antes, al costo actual, antes de la próxima alza).</li>
  * </ul>
  * Se calcula para tres escenarios (pesimista, estándar, optimista) variando d y L en una desviación estándar.
  * No depende de Spring ni de la base de datos.
@@ -64,10 +66,11 @@ public class CalculadoraReorden {
 
         double costo = datos.costoUnitario();
         double h = p.costoAlmacenPct() * costo;
+        int anticipo = datos.alzaEsperada() ? datos.diasAnticipoAlza() : 0;
 
-        ResultadoEscenario pesimista = escenario(Escenario.PESIMISTA, demanda, leadTime, p, h, z, datos);
-        ResultadoEscenario estandar = escenario(Escenario.ESTANDAR, demanda, leadTime, p, h, z, datos);
-        ResultadoEscenario optimista = escenario(Escenario.OPTIMISTA, demanda, leadTime, p, h, z, datos);
+        ResultadoEscenario pesimista = escenario(Escenario.PESIMISTA, demanda, leadTime, p, h, z, anticipo, datos);
+        ResultadoEscenario estandar = escenario(Escenario.ESTANDAR, demanda, leadTime, p, h, z, anticipo, datos);
+        ResultadoEscenario optimista = escenario(Escenario.OPTIMISTA, demanda, leadTime, p, h, z, anticipo, datos);
 
         double posicion = datos.stockActual() + datos.enTransito();
         boolean reordenar = posicion <= estandar.puntoReorden();
@@ -81,7 +84,20 @@ public class CalculadoraReorden {
         motivo.append(") ").append(reordenar ? "≤" : ">").append(" punto de reorden ").append(n(estandar.puntoReorden()))
                 .append(" = demanda media ").append(n(demanda.media())).append("/día × lead time ")
                 .append(n(leadTime.media())).append(" días + stock de seguridad ").append(n(estandar.stockSeguridad()))
-                .append(" (nivel de servicio ").append(n(p.nivelServicio() * 100)).append(" %). ");
+                .append(" (nivel de servicio ").append(n(p.nivelServicio() * 100)).append(" %)");
+        if (anticipo > 0) {
+            motivo.append(" + ").append(n(demanda.media() * anticipo)).append(" de compra anticipada");
+        }
+        motivo.append(". ");
+        if (anticipo > 0) {
+            motivo.append("El costo de este proveedor subió ").append(pct(datos.variacionCosto()))
+                    .append(" recientemente: se adelanta la compra ").append(anticipo)
+                    .append(" días para comprar al costo actual antes de una nueva alza. ");
+        } else if (datos.variacionCosto() != null && datos.umbralAlza() > 0
+                   && datos.variacionCosto() <= -datos.umbralAlza()) {
+            motivo.append("El costo de este proveedor bajó ").append(pct(-datos.variacionCosto()))
+                    .append(" recientemente. ");
+        }
         if (reordenar) {
             motivo.append("Se sugiere pedir ").append(n(estandar.cantidad())).append(" unidades (EOQ ")
                     .append(n(estandar.eoq())).append(" con el último costo de compra ").append(n2(costo)).append("). ");
@@ -98,11 +114,12 @@ public class CalculadoraReorden {
 
         return new SugerenciaCalculada(datos.productoId(), datos.proveedorId(), estado, datos.diasHistorial(), demanda,
                 leadTime, costo, p.costoPedido(), h, p.nivelServicio(), z, datos.stockActual(), datos.enTransito(),
-                datos.vidaUtilDias(), pesimista, estandar, optimista, motivo.toString().trim());
+                datos.vidaUtilDias(), pesimista, estandar, optimista, motivo.toString().trim(), datos.variacionCosto(),
+                anticipo);
     }
 
     private ResultadoEscenario escenario(Escenario e, Estadistica demanda, Estadistica leadTime, ParametrosReorden p,
-                                         double h, double z, DatosReorden datos) {
+                                         double h, double z, int diasAnticipo, DatosReorden datos) {
         double d = e.ajustar(demanda.media(), demanda.desviacion());
         double l = e.ajustar(leadTime.media(), leadTime.desviacion());
 
@@ -110,7 +127,8 @@ public class CalculadoraReorden {
         double ss = z * Math.sqrt(l * demanda.desviacion() * demanda.desviacion()
                                   + d * d * leadTime.desviacion() * leadTime.desviacion());
         ss = Math.max(ss, 0);
-        double rop = d * l + ss;
+        // Compra anticipada por alza de costo: el pedido sale cuando aún quedan diasAnticipo días de demanda extra
+        double rop = d * l + ss + d * diasAnticipo;
 
         double posicion = datos.stockActual() + datos.enTransito();
         double cantidad = posicion <= rop ? rop + eoq - posicion : 0;
@@ -138,12 +156,16 @@ public class CalculadoraReorden {
                 Estadistica.de(datos.leadTimes()), costo, p.costoPedido(), p.costoAlmacenPct() * costo,
                 p.nivelServicio(), z, datos.stockActual(), datos.enTransito(), datos.vidaUtilDias(),
                 ResultadoEscenario.vacio(Escenario.PESIMISTA), ResultadoEscenario.vacio(Escenario.ESTANDAR),
-                ResultadoEscenario.vacio(Escenario.OPTIMISTA), motivo);
+                ResultadoEscenario.vacio(Escenario.OPTIMISTA), motivo, datos.variacionCosto(), 0);
     }
 
     /** Número con hasta un decimal para el texto del motivo. */
     private static String n(double x) {
         return x == Math.rint(x) ? String.valueOf((long) x) : String.format(Locale.ROOT, "%.1f", x);
+    }
+
+    private static String pct(double fraccion) {
+        return String.format(Locale.ROOT, "%.1f %%", fraccion * 100);
     }
 
     private static String n2(double x) {

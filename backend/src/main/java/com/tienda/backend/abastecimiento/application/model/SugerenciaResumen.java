@@ -39,6 +39,10 @@ public record SugerenciaResumen(
         EscenarioResumen pesimista,
         EscenarioResumen estandar,
         EscenarioResumen optimista,
-        String motivo
+        String motivo,
+        /** Variación reciente del costo del proveedor (fracción); null si no hay compras suficientes. */
+        BigDecimal variacionCosto,
+        /** Días que se adelantó la compra por alza de costo (0 = no se adelantó). */
+        int diasAnticipo
 ) {
 }
