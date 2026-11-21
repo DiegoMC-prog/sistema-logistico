@@ -1,5 +1,6 @@
 package com.tienda.backend.credito.application.port.out;
 
+import com.tienda.backend.credito.application.model.AbonoPrevio;
 import com.tienda.backend.credito.application.model.AbonoResumen;
 import com.tienda.backend.credito.application.model.ClienteCredito;
 import com.tienda.backend.credito.application.model.CuentaRef;
@@ -42,7 +43,10 @@ public interface CreditoRepositoryPort {
     String siguienteNumeroAbono();
 
     Long insertarAbono(String numero, Long clienteId, Long turnoId, Long usuarioId, Long metodoPagoId, BigDecimal monto,
-                       String referencia);
+                       String referencia, String idempotencyKey, String idempotencyHash);
+
+    /** Abono que registró este usuario con esa clave de idempotencia, si existe. */
+    Optional<AbonoPrevio> abonoPorClave(Long usuarioId, String idempotencyKey);
 
     void insertarAplicacion(Long abonoId, Long cuentaId, BigDecimal monto);
 

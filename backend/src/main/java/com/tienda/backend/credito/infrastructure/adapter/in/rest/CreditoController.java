@@ -1,5 +1,6 @@
 package com.tienda.backend.credito.infrastructure.adapter.in.rest;
 
+import org.springframework.web.bind.annotation.RequestHeader;
 import com.tienda.backend.credito.application.model.AbonoResumen;
 import com.tienda.backend.credito.application.model.DeudorResumen;
 import com.tienda.backend.credito.application.model.EstadoCuentaCliente;
@@ -41,9 +42,13 @@ public class CreditoController {
     }
 
     @PostMapping("/clientes/{id}/abonos")
-    public ResponseEntity<AbonoResumen> abonar(@PathVariable Long id, @Valid @RequestBody AbonoRequest request) {
-        AbonoResumen abono = registrarAbonoUseCase.registrar(
-                new RegistrarAbonoComando(id, request.metodoPagoId(), request.monto(), request.referencia()));
+    public ResponseEntity<AbonoResumen> abonar(
+            @PathVariable Long id,
+            @Valid @RequestBody AbonoRequest request,
+            // R03: cabecera opcional; un reintento con la misma clave y el mismo contenido devuelve el mismo abono
+            @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey) {
+        AbonoResumen abono = registrarAbonoUseCase.registrar(new RegistrarAbonoComando(id, request.metodoPagoId(),
+                request.monto(), request.referencia(), idempotencyKey));
         return ResponseEntity.status(HttpStatus.CREATED).body(abono);
     }
 

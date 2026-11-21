@@ -9,6 +9,7 @@ import { Card } from '../../../shared/ui/card';
 import { Field } from '../../../shared/ui/field';
 import { Modal } from '../../../shared/ui/modal';
 import { StatCard } from '../../../shared/ui/stat-card';
+import { nuevaClave } from '../../ventas/data/ventas.service';
 import { MetodoPago } from '../../metodos-pago/data/metodo-pago.model';
 import { MetodosPagoService } from '../../metodos-pago/data/metodos-pago.service';
 import { Abono, EstadoCuenta, EstadoCuentaCliente } from '../data/credito.model';
@@ -196,16 +197,27 @@ export class EstadoCuentaPage {
     this.modalError.set(null);
     const efectivo = this.metodos().find((m) => m.nombre === 'EFECTIVO')?.id ?? null;
     this.form.reset({ monto: this.estado()?.deudaTotal ?? 0, metodoPagoId: efectivo, referencia: '' });
+    this.ultimoAbono = '';
     this.abonoOpen.set(true);
   }
+
+  private claveAbono = nuevaClave();
+  private ultimoAbono = '';
 
   protected guardar(): void {
     if (this.form.invalid) return this.form.markAllAsTouched();
     const v = this.form.getRawValue();
     this.saving.set(true);
     this.modalError.set(null);
+    const body = { metodoPagoId: v.metodoPagoId!, monto: Number(v.monto), ...(v.referencia.trim() ? { referencia: v.referencia.trim() } : {}) };
+    // R03: el mismo abono reintentado conserva la clave; si cambia el contenido, es un abono nuevo
+    const firma = JSON.stringify(body);
+    if (firma !== this.ultimoAbono) {
+      this.ultimoAbono = firma;
+      this.claveAbono = nuevaClave();
+    }
     this.service
-      .abonar(this.id, { metodoPagoId: v.metodoPagoId!, monto: Number(v.monto), ...(v.referencia.trim() ? { referencia: v.referencia.trim() } : {}) })
+      .abonar(this.id, body, this.claveAbono)
       .subscribe({
         next: (abono) => {
           this.saving.set(false);

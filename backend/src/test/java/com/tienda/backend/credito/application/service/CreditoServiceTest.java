@@ -96,7 +96,7 @@ class CreditoServiceTest {
                 new CuentaRef(11L, 1L, d("100"), d(deuda1), "PENDIENTE"),
                 new CuentaRef(12L, 1L, d("100"), d(deuda2), "PENDIENTE")));
         when(repo.siguienteNumeroAbono()).thenReturn("AB-00000001");
-        when(repo.insertarAbono(any(), anyLong(), anyLong(), anyLong(), anyLong(), any(), any())).thenReturn(99L);
+        when(repo.insertarAbono(any(), anyLong(), anyLong(), anyLong(), anyLong(), any(), any(), any(), any())).thenReturn(99L);
         when(repo.buscarAbono(99L)).thenReturn(Optional.of(new AbonoResumen(99L, "AB-00000001", 1L, "Ana", 3L, "cajero",
                 "EFECTIVO", d("120"), null, null, List.of())));
     }
@@ -104,7 +104,7 @@ class CreditoServiceTest {
     @Test
     void elAbonoSeAplicaALasDeudasMasAntiguasPrimero() {
         preparaAbono("100", "60");
-        service.registrar(new RegistrarAbonoComando(1L, 1L, d("120"), null));
+        service.registrar(new RegistrarAbonoComando(1L, 1L, d("120"), null, null));
 
         verify(repo).insertarAplicacion(99L, 11L, d("100"));
         verify(repo).insertarAplicacion(99L, 12L, d("20.00"));
@@ -116,13 +116,13 @@ class CreditoServiceTest {
     void elAbonoNoPuedeSuperarLaDeuda() {
         preparaAbono("100", "60");
         assertThrows(AbonoExcedeDeudaException.class,
-                () -> service.registrar(new RegistrarAbonoComando(1L, 1L, d("160.01"), null)));
+                () -> service.registrar(new RegistrarAbonoComando(1L, 1L, d("160.01"), null, null)));
     }
 
     @Test
     void abonarExigeTurnoAbierto() {
         when(repo.turnoAbiertoDeUsuario(7L)).thenReturn(Optional.empty());
         assertThrows(SinTurnoParaAbonoException.class,
-                () -> service.registrar(new RegistrarAbonoComando(1L, 1L, d("10"), null)));
+                () -> service.registrar(new RegistrarAbonoComando(1L, 1L, d("10"), null, null)));
     }
 }

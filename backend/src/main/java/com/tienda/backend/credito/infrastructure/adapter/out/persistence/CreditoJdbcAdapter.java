@@ -1,5 +1,6 @@
 package com.tienda.backend.credito.infrastructure.adapter.out.persistence;
 
+import com.tienda.backend.credito.application.model.AbonoPrevio;
 import com.tienda.backend.credito.application.model.AbonoResumen;
 import com.tienda.backend.credito.application.model.AplicacionAbono;
 import com.tienda.backend.credito.application.model.ClienteCredito;
@@ -132,12 +133,13 @@ public class CreditoJdbcAdapter implements CreditoRepositoryPort {
 
     @Override
     public Long insertarAbono(String numero, Long clienteId, Long turnoId, Long usuarioId, Long metodoPagoId,
-                              BigDecimal monto, String referencia) {
+                              BigDecimal monto, String referencia, String idempotencyKey, String idempotencyHash) {
         KeyHolder keys = new GeneratedKeyHolder();
         jdbc.update(con -> {
             PreparedStatement ps = con.prepareStatement("""
-                    INSERT INTO abonos_credito (numero_abono, cliente_id, turno_id, usuario_id, metodo_pago_id, monto, referencia)
-                    VALUES (?, ?, ?, ?, ?, ?, ?)""", Statement.RETURN_GENERATED_KEYS);
+                    INSERT INTO abonos_credito (numero_abono, cliente_id, turno_id, usuario_id, metodo_pago_id, monto, referencia,
+                                                idempotency_key, idempotency_hash)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""", Statement.RETURN_GENERATED_KEYS);
             ps.setString(1, numero);
             ps.setLong(2, clienteId);
             ps.setLong(3, turnoId);
@@ -145,10 +147,18 @@ public class CreditoJdbcAdapter implements CreditoRepositoryPort {
             ps.setLong(5, metodoPagoId);
             ps.setBigDecimal(6, monto);
             ps.setString(7, referencia);
+            ps.setString(8, idempotencyKey);
+            ps.setString(9, idempotencyHash);
             return ps;
         }, keys);
         Number id = (Number) keys.getKeys().get("id");
         return id.longValue();
+    }
+
+    @Override
+    public Optional<AbonoPrevio> abonoPorClave(Long usuarioId, String idempotencyKey) {
+        return jdbc.query("SELECT id, idempotency_hash FROM abonos_credito WHERE usuario_id = ? AND idempotency_key = ?",
+                (rs, i) -> new AbonoPrevio(rs.getLong(1), rs.getString(2)), usuarioId, idempotencyKey).stream().findFirst();
     }
 
     @Override

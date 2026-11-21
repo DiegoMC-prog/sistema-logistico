@@ -1,5 +1,11 @@
 package com.tienda.backend.credito.application.service;
 
+import com.tienda.backend.credito.domain.exception.AbonoIdempotenciaConflictoException;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.HexFormat;
+import java.util.Optional;
 import com.tienda.backend.cliente.domain.exception.ClienteNotFoundException;
 import com.tienda.backend.credito.application.model.AbonoResumen;
 import com.tienda.backend.credito.application.model.ClienteCredito;
@@ -99,7 +105,19 @@ public class CreditoService implements GestionarCuentaPorCobrarUseCase, Registra
         if (cmd.referencia() != null && cmd.referencia().length() > 100) {
             throw new CreditoDatosInvalidosException("La referencia no puede superar los 100 caracteres");
         }
+        String clave = cmd.idempotencyKey();
+        if (clave != null && !clave.matches("^[A-Za-z0-9._-]{8,64}$")) {
+            throw new CreditoDatosInvalidosException(
+                    "La clave de idempotencia debe tener entre 8 y 64 caracteres (letras, números, punto, guion y guion bajo)");
+        }
+        String huella = clave == null ? null : huella(cmd);
         Long usuarioId = usuarioActualPort.id();
+
+        // R03: reintento (doble clic, red que se cortó): misma clave y mismo contenido = el abono ya registrado
+        Optional<AbonoResumen> previo = reintento(usuarioId, clave, huella);
+        if (previo.isPresent()) {
+            return previo.get();
+        }
         Long turnoId = repo.turnoAbiertoDeUsuario(usuarioId).orElseThrow(SinTurnoParaAbonoException::new);
 
         MetodoPagoAbono metodo = repo.buscarMetodoPago(cmd.metodoPagoId())
@@ -113,6 +131,11 @@ public class CreditoService implements GestionarCuentaPorCobrarUseCase, Registra
 
         ClienteCredito cliente = repo.bloquearCliente(cmd.clienteId())
                 .orElseThrow(() -> new ClienteNotFoundException(cmd.clienteId()));
+        // Dos envíos simultáneos con la misma clave esperan el bloqueo del cliente: el segundo encuentra al primero
+        previo = reintento(usuarioId, clave, huella);
+        if (previo.isPresent()) {
+            return previo.get();
+        }
         List<CuentaRef> cuentas = repo.cuentasPendientes(cliente.id());
         BigDecimal deuda = cuentas.stream().map(CuentaRef::saldo).reduce(BigDecimal.ZERO, BigDecimal::add);
         if (cmd.monto().compareTo(deuda) > 0) {
@@ -122,7 +145,7 @@ public class CreditoService implements GestionarCuentaPorCobrarUseCase, Registra
         BigDecimal monto = cmd.monto().setScale(2, RoundingMode.HALF_UP);
         String usuario = usuarioActualPort.nombre();
         Long abonoId = repo.insertarAbono(repo.siguienteNumeroAbono(), cliente.id(), turnoId, usuarioId, metodo.id(),
-                monto, cmd.referencia() == null || cmd.referencia().isBlank() ? null : cmd.referencia().trim());
+                monto, cmd.referencia() == null || cmd.referencia().isBlank() ? null : cmd.referencia().trim(), clave, huella);
 
         // Deudas más antiguas primero
         BigDecimal restante = monto;
@@ -161,5 +184,32 @@ public class CreditoService implements GestionarCuentaPorCobrarUseCase, Registra
     @Transactional(readOnly = true)
     public List<DeudorResumen> deudores() {
         return repo.deudores();
+    }
+
+    // ---------- idempotencia (R03) ----------
+
+    private Optional<AbonoResumen> reintento(Long usuarioId, String clave, String huella) {
+        if (clave == null) {
+            return Optional.empty();
+        }
+        return repo.abonoPorClave(usuarioId, clave).map(previo -> {
+            if (!huella.equals(previo.huella())) {
+                throw new AbonoIdempotenciaConflictoException();
+            }
+            return repo.buscarAbono(previo.abonoId()).orElseThrow(() -> new AbonoNotFoundException(previo.abonoId()));
+        });
+    }
+
+    /** SHA-256 del contenido: detecta si alguien reutiliza una clave con otro abono. */
+    private static String huella(RegistrarAbonoComando cmd) {
+        String texto = "c=" + cmd.clienteId() + "|m=" + cmd.metodoPagoId() + "|v="
+                + cmd.monto().stripTrailingZeros().toPlainString() + "|r="
+                + (cmd.referencia() == null ? "" : cmd.referencia().trim());
+        try {
+            byte[] hash = MessageDigest.getInstance("SHA-256").digest(texto.getBytes(StandardCharsets.UTF_8));
+            return HexFormat.of().formatHex(hash);
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("SHA-256 no disponible", e);
+        }
     }
 }

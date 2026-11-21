@@ -1,4 +1,4 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { API_URL } from '../../../core/api/api-url';
@@ -18,7 +18,11 @@ export class CreditosService {
   }
 
   /** Exige un turno de caja abierto: el abono entra a la caja del turno. */
-  abonar(clienteId: number, body: AbonoRequest): Observable<Abono> {
-    return this.http.post<Abono>(`${API_URL}/clientes/${clienteId}/abonos`, body, withToast('Abono registrado'));
+  /** R03: la misma clave en un reintento (doble clic, red caída) devuelve el abono ya registrado, sin duplicarlo. */
+  abonar(clienteId: number, body: AbonoRequest, idempotencyKey: string): Observable<Abono> {
+    return this.http.post<Abono>(`${API_URL}/clientes/${clienteId}/abonos`, body, {
+      ...withToast('Abono registrado'),
+      headers: new HttpHeaders({ 'Idempotency-Key': idempotencyKey }),
+    });
   }
 }
