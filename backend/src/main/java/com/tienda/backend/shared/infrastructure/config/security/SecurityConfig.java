@@ -217,6 +217,10 @@ public class SecurityConfig {
                                 .hasAnyAuthority(REORDEN_VER, REORDEN_GESTIONAR)
                         .requestMatchers("/api/v1/abastecimiento/**").hasAuthority(REORDEN_GESTIONAR)
 
+                        // Recargos por escasez: consultar, activar y desactivar (solo el administrador por defecto)
+                        .requestMatchers("/api/v1/recargos-escasez", "/api/v1/recargos-escasez/**")
+                                .hasAuthority(RECARGO_GESTIONAR)
+
                         // Inventario: consultar con INVENTARIO_VER; registrar movimientos con INVENTARIO_MOVER
                         .requestMatchers(HttpMethod.GET, "/api/v1/inventario/**")
                                 .hasAnyAuthority(INVENTARIO_VER, INVENTARIO_MOVER)

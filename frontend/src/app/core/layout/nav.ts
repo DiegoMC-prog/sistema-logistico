@@ -57,6 +57,7 @@ export const NAV_SECTIONS: readonly NavSection[] = [
       { label: 'Categorías', path: '/categorias', icon: 'clipboard', permiso: todosDe(MODULOS.catalogo) },
       { label: 'Unidades de medida', path: '/unidades-medida', icon: 'grid', permiso: todosDe(MODULOS.catalogo) },
       { label: 'Lista de precios', path: '/precios', icon: 'dollar', permiso: todosDe(MODULOS.precio) },
+      { label: 'Recargos por escasez', path: '/recargos', icon: 'alert', permiso: PERMISOS.recargoGestionar },
     ],
   },
   {

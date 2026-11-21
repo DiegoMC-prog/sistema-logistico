@@ -99,6 +99,9 @@ public final class Permisos {
     public static final String REORDEN_VER = "REORDEN_VER";
     public static final String REORDEN_GESTIONAR = "REORDEN_GESTIONAR";
 
+    // Recargos por escasez sobre el precio de venta (RF-35)
+    public static final String RECARGO_GESTIONAR = "RECARGO_GESTIONAR";
+
     // Ventas, devoluciones y cambios
     public static final String VENTA_VER = "VENTA_VER";
     public static final String VENTA_CREAR = "VENTA_CREAR";

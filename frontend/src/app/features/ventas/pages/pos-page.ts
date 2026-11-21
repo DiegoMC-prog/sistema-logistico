@@ -33,6 +33,8 @@ interface Linea {
   unidad: string;
   cantidad: number;
   precio: number | null;
+  /** Recargo por escasez incluido en el precio (fracción), o null. */
+  recargo: number | null;
   precioManual: number | null;
   motivo: string;
   error: string | null;
@@ -97,6 +99,9 @@ interface PagoFila {
                         <td>
                           <p class="text-sm font-semibold text-ink">{{ l.nombre }} <span class="font-normal text-muted">({{ l.unidad }})</span></p>
                           @if (l.error) { <p class="text-xs text-danger">{{ l.error }}</p> }
+                          @if (l.recargo !== null && l.precioManual === null) {
+                            <p class="text-xs font-semibold text-danger">Incluye recargo por escasez de {{ l.recargo * 100 | number: '1.0-2' }} %</p>
+                          }
                           @if (puedeModificarPrecio && l.precioManual !== null) {
                             <input class="field-input !h-8 mt-1 text-xs" placeholder="Motivo del cambio de precio (obligatorio)"
                               [ngModel]="l.motivo" (ngModelChange)="patch(l.uid, { motivo: $event })" />
@@ -329,7 +334,7 @@ export class PosPage {
     if (existente) return this.cambiarCantidad(existente, String(existente.cantidad + 1));
     const linea: Linea = {
       uid: ++this.uid, presentacionId: item.presentacionId, nombre: item.nombre, unidad: item.unidad,
-      cantidad: 1, precio: null, precioManual: null, motivo: '', error: null, cargando: true,
+      cantidad: 1, precio: null, recargo: null, precioManual: null, motivo: '', error: null, cargando: true,
     };
     this.lineas.update((ls) => [...ls, linea]);
     this.cargarPrecio(linea.uid);
@@ -360,8 +365,8 @@ export class PosPage {
     const l = this.lineas().find((x) => x.uid === uid);
     if (!l) return;
     this.preciosService.aplicable(l.presentacionId, l.cantidad, this.cliente()?.tipoCliente.id).subscribe({
-      next: (r) => this.patch(uid, { precio: r.precio, error: null, cargando: false }),
-      error: (e) => this.patch(uid, { precio: null, cargando: false, error: errorMessage(e, 'Sin precio aplicable') }),
+      next: (r) => this.patch(uid, { precio: r.precio, recargo: r.recargo?.porcentaje ?? null, error: null, cargando: false }),
+      error: (e) => this.patch(uid, { precio: null, recargo: null, cargando: false, error: errorMessage(e, 'Sin precio aplicable') }),
     });
   }
 

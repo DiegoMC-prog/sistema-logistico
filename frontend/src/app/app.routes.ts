@@ -85,6 +85,11 @@ export const routes: Routes = [
         loadChildren: () => import('./features/abastecimiento/abastecimiento.routes').then((m) => m.ABASTECIMIENTO_ROUTES),
       },
       {
+        path: 'recargos',
+        canActivate: [permissionGuard(PERMISOS.recargoGestionar)],
+        loadChildren: () => import('./features/recargos/recargos.routes').then((m) => m.RECARGOS_ROUTES),
+      },
+      {
         path: 'pedidos',
         canActivate: [permissionGuard(PERMISOS.pedidoVer)],
         loadChildren: () => import('./features/pedidos/pedidos.routes').then((m) => m.PEDIDOS_ROUTES),

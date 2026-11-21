@@ -14,6 +14,6 @@ public class VentaPrecioAdapter implements PrecioVentaPort {
 
     @Override
     public BigDecimal precioAplicable(Long presentacionId, BigDecimal cantidad, Long tipoClienteId) {
-        return resolverPrecioUseCase.resolver(presentacionId, cantidad, tipoClienteId).precio().getPrecio();
+        return resolverPrecioUseCase.resolver(presentacionId, cantidad, tipoClienteId).precioFinal();
     }
 }

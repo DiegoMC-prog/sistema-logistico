@@ -12,6 +12,7 @@ import com.tienda.backend.precio.application.port.in.ObtenerPrecioUseCase;
 import com.tienda.backend.precio.application.port.in.ResolverPrecioUseCase;
 import com.tienda.backend.precio.application.port.out.PrecioRepositoryPort;
 import com.tienda.backend.precio.application.port.out.PrecioTipoClienteConsultaPort;
+import com.tienda.backend.precio.application.port.out.RecargoRepositoryPort;
 import com.tienda.backend.precio.application.port.out.PresentacionConsultaPort;
 import com.tienda.backend.precio.domain.exception.PrecioDatosInvalidosException;
 import com.tienda.backend.precio.domain.exception.PrecioDuplicadoException;
@@ -41,6 +42,7 @@ public class PrecioService implements CrearPrecioUseCase, EditarPrecioUseCase, L
     private final PrecioRepositoryPort precioRepositoryPort;
     private final PresentacionConsultaPort presentacionConsultaPort;
     private final PrecioTipoClienteConsultaPort tipoClienteConsultaPort;
+    private final RecargoRepositoryPort recargoRepositoryPort;
 
     @Override
     @Transactional
@@ -114,7 +116,8 @@ public class PrecioService implements CrearPrecioUseCase, EditarPrecioUseCase, L
 
     /**
      * Regla: si hay precio para el tipo de cliente, gana sobre el general (aunque el general sea más barato).
-     * Dentro del grupo elegido se toma el de mayor cantidad mínima alcanzada.
+     * Dentro del grupo elegido se toma el de mayor cantidad mínima alcanzada. Al final se suma el recargo por escasez
+     * vigente (RF-35): el del producto o, si no hay, el de su categoría.
      */
     @Override
     @Transactional(readOnly = true)
@@ -131,7 +134,7 @@ public class PrecioService implements CrearPrecioUseCase, EditarPrecioUseCase, L
                 .max(porEscalon)
                 .or(() -> candidatos.stream().filter(Precio::esGeneral).max(porEscalon))
                 .orElseThrow(() -> new PrecioNoDisponibleException(presentacionId, cantidad));
-        return detalle(elegido);
+        return detalle(elegido).conRecargo(recargoRepositoryPort.vigentePorPresentacion(presentacionId).orElse(null));
     }
 
     private Precio buscar(Long id) {

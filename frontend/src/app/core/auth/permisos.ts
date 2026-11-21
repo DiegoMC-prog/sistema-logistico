@@ -94,6 +94,9 @@ export const PERMISOS = {
   reordenVer: 'REORDEN_VER',
   reordenGestionar: 'REORDEN_GESTIONAR',
 
+  /** Recargos por escasez sobre el precio de venta. */
+  recargoGestionar: 'RECARGO_GESTIONAR',
+
   reporteVentas: 'REPORTE_VENTAS',
   reporteCaja: 'REPORTE_CAJA',
   reporteInventario: 'REPORTE_INVENTARIO',

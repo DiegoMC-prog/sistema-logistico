@@ -23,6 +23,11 @@ export interface PrecioFilters extends PageParams {
 }
 
 export interface PrecioAplicable {
+  /** Precio a cobrar: incluye el recargo por escasez, si hay. */
   precio: number;
+  /** Precio de la jerarquía, sin recargo. */
+  precioBase: number;
+  /** Recargo por escasez aplicado (porcentaje en fracción: 0.15 = +15 %); null si no hay. */
+  recargo: { id: number; alcance: 'PRODUCTO' | 'CATEGORIA'; porcentaje: number; motivo: string } | null;
   [k: string]: unknown;
 }
