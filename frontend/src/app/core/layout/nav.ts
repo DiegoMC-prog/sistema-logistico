@@ -32,6 +32,7 @@ export const NAV_SECTIONS: readonly NavSection[] = [
   {
     title: 'Compras',
     items: [
+      { label: 'Sugerencias de reorden', path: '/abastecimiento', icon: 'activity', permiso: [PERMISOS.reordenVer, PERMISOS.reordenGestionar] },
       { label: 'Pedidos', path: '/pedidos', icon: 'truck', permiso: PERMISOS.pedidoVer },
       { label: 'Proveedores', path: '/proveedores', icon: 'users', permiso: PERMISOS.proveedorVer },
     ],

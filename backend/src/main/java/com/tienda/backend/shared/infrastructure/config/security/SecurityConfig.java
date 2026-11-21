@@ -212,6 +212,11 @@ public class SecurityConfig {
                         // Alertas de vencimiento y stock bajo: consultar, marcar leídas y forzar la revisión
                         .requestMatchers("/api/v1/alertas", "/api/v1/alertas/**").hasAuthority(ALERTA_VER)
 
+                        // Abastecimiento (sugerencias de reorden): leer con cualquiera de sus permisos, actuar con GESTIONAR
+                        .requestMatchers(HttpMethod.GET, "/api/v1/abastecimiento/**")
+                                .hasAnyAuthority(REORDEN_VER, REORDEN_GESTIONAR)
+                        .requestMatchers("/api/v1/abastecimiento/**").hasAuthority(REORDEN_GESTIONAR)
+
                         // Inventario: consultar con INVENTARIO_VER; registrar movimientos con INVENTARIO_MOVER
                         .requestMatchers(HttpMethod.GET, "/api/v1/inventario/**")
                                 .hasAnyAuthority(INVENTARIO_VER, INVENTARIO_MOVER)

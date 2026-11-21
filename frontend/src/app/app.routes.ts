@@ -80,6 +80,11 @@ export const routes: Routes = [
         loadChildren: () => import('./features/alertas/alertas.routes').then((m) => m.ALERTAS_ROUTES),
       },
       {
+        path: 'abastecimiento',
+        canActivate: [permissionGuard([PERMISOS.reordenVer, PERMISOS.reordenGestionar])],
+        loadChildren: () => import('./features/abastecimiento/abastecimiento.routes').then((m) => m.ABASTECIMIENTO_ROUTES),
+      },
+      {
         path: 'pedidos',
         canActivate: [permissionGuard(PERMISOS.pedidoVer)],
         loadChildren: () => import('./features/pedidos/pedidos.routes').then((m) => m.PEDIDOS_ROUTES),

@@ -90,6 +90,10 @@ export const PERMISOS = {
   /** Alertas de vencimiento y stock bajo. */
   alertaVer: 'ALERTA_VER',
 
+  /** Sugerencias de reorden (EOQ): ver, y recalcular / convertir en pedidos / editar parámetros. */
+  reordenVer: 'REORDEN_VER',
+  reordenGestionar: 'REORDEN_GESTIONAR',
+
   reporteVentas: 'REPORTE_VENTAS',
   reporteCaja: 'REPORTE_CAJA',
   reporteInventario: 'REPORTE_INVENTARIO',

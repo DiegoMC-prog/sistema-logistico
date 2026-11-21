@@ -95,6 +95,10 @@ public final class Permisos {
     // Alertas de vencimiento y stock bajo
     public static final String ALERTA_VER = "ALERTA_VER";
 
+    // Abastecimiento: sugerencias de reorden (EOQ)
+    public static final String REORDEN_VER = "REORDEN_VER";
+    public static final String REORDEN_GESTIONAR = "REORDEN_GESTIONAR";
+
     // Ventas, devoluciones y cambios
     public static final String VENTA_VER = "VENTA_VER";
     public static final String VENTA_CREAR = "VENTA_CREAR";
