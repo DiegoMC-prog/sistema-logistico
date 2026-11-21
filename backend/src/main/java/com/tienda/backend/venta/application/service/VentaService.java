@@ -1,5 +1,6 @@
 package com.tienda.backend.venta.application.service;
 
+import com.tienda.backend.shared.application.model.CredencialesSupervisor;
 import com.tienda.backend.venta.application.model.RegistrarVentaComando;
 import com.tienda.backend.venta.application.model.ResultadoRegistroVenta;
 import com.tienda.backend.venta.application.model.VentaFiltro;
@@ -55,8 +56,8 @@ public class VentaService implements RegistrarVentaUseCase, AnularVentaUseCase, 
     }
 
     @Override
-    public VentaVista anular(Long ventaId, String motivo) {
-        return vistaFactory.construir(ejecutor.anular(ventaId, motivo));
+    public VentaVista anular(Long ventaId, String motivo, CredencialesSupervisor autorizacion) {
+        return vistaFactory.construir(ejecutor.anular(ventaId, motivo, autorizacion));
     }
 
     @Override

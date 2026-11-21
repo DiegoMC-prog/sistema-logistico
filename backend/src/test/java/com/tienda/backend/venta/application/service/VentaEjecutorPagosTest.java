@@ -98,7 +98,8 @@ class VentaEjecutorPagosTest {
         when(ventaRepo.save(any(Venta.class))).thenAnswer(inv -> inv.getArgument(0));
 
         ejecutor = new VentaEjecutor(ventaRepo, numeroPort, turnoPort, mock(ClienteVentaPort.class), metodoPort,
-                catalogoPort, precioPort, stockPort, usuario, mock(VentaDevolucionConsultaPort.class), creditoPort);
+                catalogoPort, precioPort, stockPort, usuario, mock(VentaDevolucionConsultaPort.class), creditoPort,
+                mock(com.tienda.backend.shared.application.port.out.AutorizacionOperacionPort.class));
     }
 
     private static BigDecimal d(String v) {

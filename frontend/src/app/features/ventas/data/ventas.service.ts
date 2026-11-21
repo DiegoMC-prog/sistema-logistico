@@ -1,3 +1,4 @@
+import { Autorizacion } from '../../../shared/ui/autorizacion-supervisor';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
@@ -26,8 +27,10 @@ export class VentasService {
     });
   }
 
-  anular(id: number, motivo: string): Observable<Venta> {
-    return this.http.post<Venta>(`${API_URL}/ventas/${id}/anular`, { motivo }, withToast('Venta anulada'));
+  /** R08: sobre el monto umbral el backend pide las credenciales de un administrador (`autorizacion`). */
+  anular(id: number, motivo: string, autorizacion?: Autorizacion): Observable<Venta> {
+    return this.http.post<Venta>(`${API_URL}/ventas/${id}/anular`, { motivo, ...(autorizacion ? { autorizacion } : {}) },
+      withToast('Venta anulada'));
   }
 }
 

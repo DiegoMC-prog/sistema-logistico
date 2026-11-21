@@ -1,5 +1,9 @@
 package com.tienda.backend.venta.application.service;
 
+import com.tienda.backend.shared.application.model.CredencialesSupervisor;
+import com.tienda.backend.shared.application.model.AutorizacionOtorgada;
+import com.tienda.backend.shared.application.model.OperacionAutorizable;
+import com.tienda.backend.shared.application.port.out.AutorizacionOperacionPort;
 import com.tienda.backend.venta.application.model.AsignacionStock;
 import com.tienda.backend.venta.application.model.ClienteVenta;
 import com.tienda.backend.venta.application.model.ItemStock;
@@ -89,6 +93,7 @@ class VentaEjecutor {
     private final UsuarioActualPort usuarioActualPort;
     private final VentaDevolucionConsultaPort devolucionConsultaPort;
     private final CreditoVentaPort creditoVentaPort;
+    private final AutorizacionOperacionPort autorizacionOperacionPort;
 
     /** Resultado interno: la venta y si se creó ahora (false = reintento idempotente). */
     record Registrada(Venta venta, boolean creada, BigDecimal creditoAplicado) {
@@ -187,7 +192,7 @@ class VentaEjecutor {
         return new Registrada(guardada, true, credito);
     }
 
-    Venta anular(Long ventaId, String motivo) {
+    Venta anular(Long ventaId, String motivo, CredencialesSupervisor credenciales) {
         Venta venta = ventaRepositoryPort.findByIdParaActualizar(ventaId)
                 .orElseThrow(() -> new VentaNotFoundException(ventaId));
         venta.anular(usuarioActualPort.nombre(), motivo);   // valida estado y motivo antes de tocar nada
@@ -206,6 +211,10 @@ class VentaEjecutor {
             throw new TurnoCerradoNoAnulableException(venta.getNumeroVenta());
         }
 
+        // R08: sobre el monto umbral hace falta un administrador (antes de reponer stock o anular la deuda)
+        Optional<AutorizacionOtorgada> autorizacion = autorizacionOperacionPort.exigir(
+                OperacionAutorizable.ANULACION_VENTA, venta.getTotal(), credenciales);
+
         // Cada lote vuelve a su sitio; un lote repetido en varias líneas se suma
         Map<Long, ReposicionStock> repos = new LinkedHashMap<>();
         for (LineaVenta linea : venta.getLineas()) {
@@ -217,7 +226,9 @@ class VentaEjecutor {
         stockVentaPort.reponer(venta.getDepositoId(), "Anulación de la venta " + venta.getNumeroVenta(),
                 List.copyOf(repos.values()), venta.getId());
         creditoVentaPort.anularCuenta(venta.getId());   // falla si ya tiene abonos: se revierte toda la anulación
-        return ventaRepositoryPort.save(venta);
+        Venta anulada = ventaRepositoryPort.save(venta);
+        autorizacionOperacionPort.registrar(autorizacion, anulada.getId());
+        return anulada;
     }
 
     // ---------- validaciones y resolución ----------

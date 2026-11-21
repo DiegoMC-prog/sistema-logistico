@@ -2,6 +2,7 @@ import { DecimalPipe } from '@angular/common';
 import { Component, OnInit, computed, inject, input, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { errorMessage } from '../../../core/api/api-error';
+import { AutorizacionEstado, AutorizacionSupervisor } from '../../../shared/ui/autorizacion-supervisor';
 import { Btn } from '../../../shared/ui/button';
 import { Modal } from '../../../shared/ui/modal';
 import { MetodoPago } from '../../metodos-pago/data/metodo-pago.model';
@@ -22,7 +23,7 @@ interface FilaDevolucion {
 /** Devolución (parcial o total) de una venta, con o sin reembolso. */
 @Component({
   selector: 'app-devolucion-modal',
-  imports: [DecimalPipe, FormsModule, Btn, Modal],
+  imports: [DecimalPipe, FormsModule, AutorizacionSupervisor, Btn, Modal],
   template: `
     <app-modal title="Registrar devolución" [description]="'Venta ' + venta().numeroVenta" size="lg" (closed)="cerrar()">
       @if (resultado(); as r) {
@@ -67,6 +68,7 @@ interface FilaDevolucion {
               </select>
             </label>
           }
+          <app-autorizacion-supervisor [estado]="autorizacion" />
         </div>
       }
       @if (resultado()) {
@@ -100,6 +102,8 @@ export class DevolucionModal implements OnInit {
 
   private ultimoCuerpo = '';
   private clave = nuevaClave();
+  /** R08: autorización de un administrador sobre el monto umbral. */
+  protected readonly autorizacion = new AutorizacionEstado();
 
   ngOnInit(): void {
     this.filas.set(
@@ -142,7 +146,8 @@ export class DevolucionModal implements OnInit {
 
     this.enviando.set(true);
     this.error.set(null);
-    this.service.crear(this.venta().id, body, this.clave).subscribe({
+    const aut = this.autorizacion.body();
+    this.service.crear(this.venta().id, aut ? { ...body, autorizacion: aut } : body, this.clave).subscribe({
       next: (d) => {
         this.enviando.set(false);
         this.resultado.set(d);
@@ -150,6 +155,11 @@ export class DevolucionModal implements OnInit {
       },
       error: (e) => {
         this.enviando.set(false);
+        const aut = this.autorizacion.manejar(e);
+        if (aut.manejado) {
+          this.error.set(aut.error);
+          return;
+        }
         this.error.set(errorMessage(e, 'No se pudo registrar la devolución'));
       },
     });

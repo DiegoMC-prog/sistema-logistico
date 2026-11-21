@@ -1,3 +1,5 @@
+import { Autorizacion } from '../../../shared/ui/autorizacion-supervisor';
+
 import { PageParams } from '../../../core/api/page.model';
 import { PagoRequest, VentaItemRequest } from '../../ventas/data/venta.model';
 
@@ -8,6 +10,8 @@ export interface DevolucionItemRequest {
 }
 
 export interface DevolucionRequest {
+  /** R08: credenciales de un administrador si se superó el monto umbral. */
+  autorizacion?: Autorizacion;
   motivo: string;
   reembolsar: boolean;
   metodoPagoId?: number;
@@ -15,6 +19,8 @@ export interface DevolucionRequest {
 }
 
 export interface CambioRequest {
+  /** R08: credenciales de un administrador si se superó el monto umbral. */
+  autorizacion?: Autorizacion;
   motivo: string;
   devueltos: { ventaDetalleId: number; cantidad: number; reingresaStock?: boolean }[];
   nuevos: Pick<VentaItemRequest, 'presentacionId' | 'cantidad'>[];

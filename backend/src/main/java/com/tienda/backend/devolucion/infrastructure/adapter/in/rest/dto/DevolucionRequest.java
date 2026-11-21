@@ -1,5 +1,6 @@
 package com.tienda.backend.devolucion.infrastructure.adapter.in.rest.dto;
 
+import com.tienda.backend.shared.infrastructure.adapter.in.rest.dto.AutorizacionRequest;
 import com.tienda.backend.devolucion.application.model.ItemDevueltoComando;
 import com.tienda.backend.devolucion.application.model.RegistrarDevolucionComando;
 import jakarta.validation.Valid;
@@ -26,11 +27,15 @@ public record DevolucionRequest(
 
         @NotEmpty(message = "Debe indicar al menos una linea a devolver")
         @Size(max = 100, message = "Se admiten hasta 100 lineas")
-        List<@Valid ItemDevueltoRequest> items
+        List<@Valid ItemDevueltoRequest> items,
+
+        /** R08: credenciales de un administrador si el monto supera el umbral. */
+        @Valid AutorizacionRequest autorizacion
 ) {
     public RegistrarDevolucionComando toComando(Long ventaId, String idempotencyKey) {
         return new RegistrarDevolucionComando(ventaId, motivo, reembolsar == null || reembolsar, metodoPagoId,
-                items.stream().map(ItemDevueltoRequest::toComando).toList(), idempotencyKey);
+                items.stream().map(ItemDevueltoRequest::toComando).toList(), idempotencyKey,
+                AutorizacionRequest.credenciales(autorizacion));
     }
 
     public record ItemDevueltoRequest(

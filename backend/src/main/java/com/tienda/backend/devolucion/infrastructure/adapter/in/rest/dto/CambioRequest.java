@@ -1,5 +1,6 @@
 package com.tienda.backend.devolucion.infrastructure.adapter.in.rest.dto;
 
+import com.tienda.backend.shared.infrastructure.adapter.in.rest.dto.AutorizacionRequest;
 import com.tienda.backend.devolucion.application.model.ItemNuevoComando;
 import com.tienda.backend.devolucion.application.model.PagoCambioComando;
 import com.tienda.backend.devolucion.application.model.RegistrarCambioComando;
@@ -30,7 +31,10 @@ public record CambioRequest(
 
         /** Pago de la diferencia, solo si lo nuevo vale mas que lo devuelto. */
         @Size(max = 10, message = "Se admiten hasta 10 pagos")
-        List<@Valid PagoRequest> pagos
+        List<@Valid PagoRequest> pagos,
+
+        /** R08: credenciales de un administrador si lo devuelto supera el monto umbral. */
+        @Valid AutorizacionRequest autorizacion
 ) {
     public record ItemNuevoRequest(
             @NotNull(message = "La presentacion es obligatoria")
@@ -70,6 +74,6 @@ public record CambioRequest(
                 nuevos.stream().map(n -> new ItemNuevoComando(n.presentacionId(), n.cantidad(), n.precioUnitario(), n.motivoPrecio())).toList(),
                 pagos == null ? List.of()
                         : pagos.stream().map(p -> new PagoCambioComando(p.metodoPagoId(), p.monto(), p.referencia())).toList(),
-                idempotencyKey);
+                idempotencyKey, AutorizacionRequest.credenciales(autorizacion));
     }
 }

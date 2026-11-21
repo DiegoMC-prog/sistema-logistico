@@ -6,6 +6,7 @@ import { errorMessage } from '../../../core/api/api-error';
 import { Page } from '../../../core/api/page.model';
 import { AuthService } from '../../../core/auth/auth.service';
 import { PERMISOS } from '../../../core/auth/permisos';
+import { AutorizacionEstado, AutorizacionSupervisor } from '../../../shared/ui/autorizacion-supervisor';
 import { Btn } from '../../../shared/ui/button';
 import { Card } from '../../../shared/ui/card';
 import { Modal } from '../../../shared/ui/modal';
@@ -19,7 +20,7 @@ import { VentasService } from '../data/ventas.service';
 
 @Component({
   selector: 'app-venta-detalle-page',
-  imports: [DatePipe, DecimalPipe, FormsModule, RouterLink, Btn, Card, Modal, NotaVenta, DevolucionModal, CambioModal],
+  imports: [DatePipe, DecimalPipe, FormsModule, RouterLink, AutorizacionSupervisor, Btn, Card, Modal, NotaVenta, DevolucionModal, CambioModal],
   template: `
     <div class="space-y-6">
       <a routerLink="/ventas" class="text-sm font-medium text-accent hover:underline">← Volver a ventas</a>
@@ -72,6 +73,7 @@ import { VentasService } from '../data/ventas.service';
           <label class="block text-sm font-medium text-ink">Motivo
             <input class="field-input mt-1" maxlength="200" [ngModel]="motivo()" (ngModelChange)="motivo.set($event)" />
           </label>
+          <app-autorizacion-supervisor [estado]="autorizacion" />
         </div>
         <ng-container modal-footer>
           <button appBtn variant="secondary" type="button" (click)="anularOpen.set(false)">Cancelar</button>
@@ -105,6 +107,8 @@ export class VentaDetallePage {
   protected readonly anularOpen = signal(false);
   protected readonly anulando = signal(false);
   protected readonly anularError = signal<string | null>(null);
+  /** R08: autorización de un administrador sobre el monto umbral. */
+  protected readonly autorizacion = new AutorizacionEstado();
   protected readonly motivo = signal('');
   protected readonly devolucionOpen = signal(false);
   protected readonly cambioOpen = signal(false);
@@ -140,6 +144,7 @@ export class VentaDetallePage {
   protected abrirAnular(): void {
     this.motivo.set('');
     this.anularError.set(null);
+    this.autorizacion.reset();
     this.anularOpen.set(true);
   }
 
@@ -147,7 +152,7 @@ export class VentaDetallePage {
     if (!this.motivo().trim()) return void this.anularError.set('Indica el motivo de la anulación');
     this.anulando.set(true);
     this.anularError.set(null);
-    this.ventas.anular(this.id, this.motivo().trim()).subscribe({
+    this.ventas.anular(this.id, this.motivo().trim(), this.autorizacion.body()).subscribe({
       next: (v) => {
         this.anulando.set(false);
         this.anularOpen.set(false);
@@ -155,6 +160,11 @@ export class VentaDetallePage {
       },
       error: (e) => {
         this.anulando.set(false);
+        const aut = this.autorizacion.manejar(e);
+        if (aut.manejado) {
+          this.anularError.set(aut.error);
+          return;
+        }
         this.anularError.set(errorMessage(e, 'No se pudo anular la venta'));
       },
     });

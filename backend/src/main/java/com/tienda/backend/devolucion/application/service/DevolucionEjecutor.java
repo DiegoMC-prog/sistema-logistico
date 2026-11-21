@@ -1,5 +1,9 @@
 package com.tienda.backend.devolucion.application.service;
 
+import com.tienda.backend.shared.application.model.AutorizacionOtorgada;
+import com.tienda.backend.shared.application.model.CredencialesSupervisor;
+import com.tienda.backend.shared.application.model.OperacionAutorizable;
+import com.tienda.backend.shared.application.port.out.AutorizacionOperacionPort;
 import com.tienda.backend.devolucion.application.model.ItemDevueltoComando;
 import com.tienda.backend.devolucion.application.model.ItemNuevoComando;
 import com.tienda.backend.devolucion.application.model.MetodoPagoRef;
@@ -70,6 +74,7 @@ class DevolucionEjecutor {
     private final NumeroDevolucionGeneradorPort numeroDevolucionGeneradorPort;
     private final UsuarioActualPort usuarioActualPort;
     private final CreditoDevolucionPort creditoDevolucionPort;
+    private final AutorizacionOperacionPort autorizacionOperacionPort;
 
     /** Plazo en días desde la venta; 0 = sin límite. */
     @Value("${app.devoluciones.dias-maximos:30}")
@@ -81,17 +86,18 @@ class DevolucionEjecutor {
     /** Lo que tienen en común una devolución simple y un cambio. */
     private record Operacion(Long ventaId, String motivo, List<ItemDevueltoComando> items, String key,
                              boolean cambio, boolean reembolsar, Long metodoPagoId,
-                             List<ItemNuevoComando> nuevos, List<PagoCambioComando> pagos) {
+                             List<ItemNuevoComando> nuevos, List<PagoCambioComando> pagos,
+                             CredencialesSupervisor autorizacion) {
     }
 
     Registrada registrarDevolucion(RegistrarDevolucionComando cmd) {
         return ejecutar(new Operacion(cmd.ventaId(), cmd.motivo(), cmd.items(), cmd.idempotencyKey(), false,
-                cmd.reembolsar(), cmd.metodoPagoId(), List.of(), List.of()));
+                cmd.reembolsar(), cmd.metodoPagoId(), List.of(), List.of(), cmd.autorizacion()));
     }
 
     Registrada registrarCambio(RegistrarCambioComando cmd) {
         return ejecutar(new Operacion(cmd.ventaId(), cmd.motivo(), cmd.devueltos(), cmd.idempotencyKey(), true,
-                false, null, cmd.nuevos(), cmd.pagos()));
+                false, null, cmd.nuevos(), cmd.pagos(), cmd.autorizacion()));
     }
 
     private Registrada ejecutar(Operacion op) {
@@ -132,14 +138,21 @@ class DevolucionEjecutor {
         CalculadorDevolucion.Calculo calculo = CalculadorDevolucion.calcular(venta, op.items(),
                 devolucionRepositoryPort.devueltoPorLinea(venta.id()));
         BigDecimal credito = calculo.monto();
+
+        // 4. R08: sobre el monto umbral hace falta un administrador (antes de tocar caja, deuda o stock)
+        Optional<AutorizacionOtorgada> autorizacion = autorizacionOperacionPort.exigir(
+                op.cambio() ? OperacionAutorizable.CAMBIO : OperacionAutorizable.DEVOLUCION, calculo.monto(),
+                op.autorizacion());
         // Si la venta se fió, lo devuelto baja primero la deuda del cliente; solo el resto se reembolsa o queda de crédito
         if ((op.cambio() || op.reembolsar()) && credito.signum() > 0) {
             credito = credito.subtract(creditoDevolucionPort.descontarDeuda(venta.id(), credito));
         }
 
-        return op.cambio()
+        Registrada registrada = op.cambio()
                 ? cambio(op, venta, turno, calculo, credito, usuarioId, huella)
                 : simple(op, venta, turno, calculo, credito, usuarioId, huella);
+        autorizacionOperacionPort.registrar(autorizacion, registrada.devolucion().getId());
+        return registrada;
     }
 
     private Registrada simple(Operacion op, VentaOriginal venta, TurnoRef turno, CalculadorDevolucion.Calculo calculo,

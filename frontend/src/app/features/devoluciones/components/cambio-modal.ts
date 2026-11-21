@@ -2,6 +2,7 @@ import { DecimalPipe } from '@angular/common';
 import { Component, OnInit, inject, input, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { errorMessage } from '../../../core/api/api-error';
+import { AutorizacionEstado, AutorizacionSupervisor } from '../../../shared/ui/autorizacion-supervisor';
 import { Btn, IconBtn } from '../../../shared/ui/button';
 import { Modal } from '../../../shared/ui/modal';
 import { MetodoPago } from '../../metodos-pago/data/metodo-pago.model';
@@ -31,7 +32,7 @@ interface PagoFila {
 /** Cambio por otro producto: devuelve y vende lo nuevo en una sola operación. */
 @Component({
   selector: 'app-cambio-modal',
-  imports: [DecimalPipe, FormsModule, Btn, IconBtn, Modal, ProductPicker],
+  imports: [DecimalPipe, FormsModule, AutorizacionSupervisor, Btn, IconBtn, Modal, ProductPicker],
   template: `
     <app-modal title="Cambio por otro producto" [description]="'Venta ' + venta().numeroVenta" size="lg" (closed)="closed.emit()">
       @if (resultado(); as r) {
@@ -102,6 +103,7 @@ interface PagoFila {
           <label class="block text-sm font-medium text-ink">Motivo
             <input class="field-input mt-1" maxlength="200" [ngModel]="motivo()" (ngModelChange)="motivo.set($event)" />
           </label>
+          <app-autorizacion-supervisor [estado]="autorizacion" />
         </div>
       }
       @if (resultado()) {
@@ -134,6 +136,8 @@ export class CambioModal implements OnInit {
 
   private ultimoCuerpo = '';
   private clave = nuevaClave();
+  /** R08: autorización de un administrador sobre el monto umbral. */
+  protected readonly autorizacion = new AutorizacionEstado();
 
   ngOnInit(): void {
     this.devueltas.set(
@@ -199,7 +203,8 @@ export class CambioModal implements OnInit {
 
     this.enviando.set(true);
     this.error.set(null);
-    this.service.cambio(this.venta().id, body, this.clave).subscribe({
+    const aut = this.autorizacion.body();
+    this.service.cambio(this.venta().id, aut ? { ...body, autorizacion: aut } : body, this.clave).subscribe({
       next: (r) => {
         this.enviando.set(false);
         this.resultado.set(r);
@@ -207,6 +212,11 @@ export class CambioModal implements OnInit {
       },
       error: (e) => {
         this.enviando.set(false);
+        const aut = this.autorizacion.manejar(e);
+        if (aut.manejado) {
+          this.error.set(aut.error);
+          return;
+        }
         this.error.set(errorMessage(e, 'No se pudo registrar el cambio'));
       },
     });

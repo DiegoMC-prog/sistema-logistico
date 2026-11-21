@@ -1,5 +1,6 @@
 package com.tienda.backend.venta.infrastructure.adapter.in.rest;
 
+import com.tienda.backend.shared.infrastructure.adapter.in.rest.dto.AutorizacionRequest;
 import com.tienda.backend.venta.application.model.ResultadoRegistroVenta;
 import com.tienda.backend.venta.application.model.VentaFiltro;
 import com.tienda.backend.venta.application.port.in.AnularVentaUseCase;
@@ -44,7 +45,8 @@ public class VentaController {
 
     @PostMapping("/{id}/anular")
     public ResponseEntity<VentaResponse> anular(@PathVariable Long id, @Valid @RequestBody AnularVentaRequest request) {
-        return ResponseEntity.ok(VentaResponse.from(anularVentaUseCase.anular(id, request.motivo())));
+        return ResponseEntity.ok(VentaResponse.from(anularVentaUseCase.anular(id, request.motivo(),
+                AutorizacionRequest.credenciales(request.autorizacion()))));
     }
 
     @GetMapping
