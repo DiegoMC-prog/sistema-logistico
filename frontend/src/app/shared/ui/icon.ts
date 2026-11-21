@@ -2,7 +2,7 @@ import { Component, computed, inject, input } from '@angular/core';
 import { DomSanitizer } from '@angular/platform-browser';
 
 export type IconName =
-  | 'activity' | 'alert' | 'barcode' | 'box' | 'camera' | 'check-circle' | 'chevron' | 'clipboard'
+  | 'activity' | 'alert' | 'barcode' | 'bell' | 'box' | 'camera' | 'check-circle' | 'chevron' | 'clipboard'
   | 'clock' | 'close' | 'download' | 'edit' | 'eye' | 'filter' | 'grid' | 'help' | 'key' | 'location'
   | 'logout' | 'menu' | 'moon' | 'plus' | 'search' | 'settings' | 'shield' | 'sun' | 'tag' | 'trash'
   | 'truck' | 'upload' | 'user' | 'users' | 'cart' | 'wallet' | 'receipt' | 'undo' | 'dollar';
@@ -11,6 +11,7 @@ export type IconName =
 const PATHS: Record<IconName, string> = {
   activity: '<path d="M4 13h3l2-7 4 12 2-5h5" /><path d="M20 5v4h-4" />',
   alert: '<path d="M12 9v4" /><path d="M12 17h.01" /><path d="M10.3 3.6 2.4 17.2A2 2 0 0 0 4.1 20h15.8a2 2 0 0 0 1.7-2.8L13.7 3.6a2 2 0 0 0-3.4 0Z" />',
+  bell: '<path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9Z" /><path d="M10.3 21a1.9 1.9 0 0 0 3.4 0" />',
   barcode: '<path d="M3 5v14M7 5v14M10 5v14M14 5v14M17 5v14M21 5v14" /><path d="M3 9h4m10 6h4" />',
   box: '<path d="m21 8-9-5-9 5 9 5 9-5Z" /><path d="m3 8 9 5v9l9-5V8M12 13v9" />',
   camera: '<path d="M4 7h3l1.5-2h7L17 7h3v12H4Z" /><circle cx="12" cy="13" r="3" />',

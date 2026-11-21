@@ -2,12 +2,14 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { filter, map, startWith } from 'rxjs';
+import { AlertasBell } from '../../features/alertas/alertas-bell';
 import { Brand } from '../../shared/ui/brand';
 import { IconBtn } from '../../shared/ui/button';
 import { ConfirmDialog } from '../../shared/ui/confirm-dialog';
 import { errorMessage } from '../api/api-error';
 import { Icon } from '../../shared/ui/icon';
 import { AuthService } from '../auth/auth.service';
+import { PERMISOS } from '../auth/permisos';
 import { NAV_SECTIONS } from './nav';
 import { ThemeService } from './theme.service';
 
@@ -15,7 +17,7 @@ const COLLAPSED_KEY = 'nav.collapsed';
 
 @Component({
   selector: 'app-shell',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, Brand, ConfirmDialog, Icon, IconBtn],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, AlertasBell, Brand, ConfirmDialog, Icon, IconBtn],
   template: `
     <div class="min-h-screen bg-canvas font-sans text-ink">
       @if (menuOpen()) {
@@ -103,6 +105,9 @@ const COLLAPSED_KEY = 'nav.collapsed';
             </div>
           </div>
           <div class="flex items-center gap-1 md:gap-2">
+            @if (verAlertas()) {
+              <app-alertas-bell />
+            }
             <button
               appIconBtn
               [icon]="theme.dark() ? 'sun' : 'moon'"
@@ -143,6 +148,9 @@ export class Shell {
   protected readonly auth = inject(AuthService);
   protected readonly theme = inject(ThemeService);
   private readonly router = inject(Router);
+
+  /** La campana solo se muestra (y solo consulta el backend) a quien puede ver alertas. */
+  protected readonly verAlertas = computed(() => this.auth.hasPermission(PERMISOS.alertaVer));
 
   protected readonly menuOpen = signal(false);
   protected readonly logoutAllOpen = signal(false);

@@ -92,6 +92,9 @@ public final class Permisos {
     // Crédito: estado de cuenta de clientes y abonos de deuda
     public static final String CREDITO_GESTIONAR = "CREDITO_GESTIONAR";
 
+    // Alertas de vencimiento y stock bajo
+    public static final String ALERTA_VER = "ALERTA_VER";
+
     // Ventas, devoluciones y cambios
     public static final String VENTA_VER = "VENTA_VER";
     public static final String VENTA_CREAR = "VENTA_CREAR";

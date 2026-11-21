@@ -75,6 +75,11 @@ export const routes: Routes = [
         loadChildren: () => import('./features/lotes/lotes.routes').then((m) => m.LOTES_ROUTES),
       },
       {
+        path: 'alertas',
+        canActivate: [permissionGuard(PERMISOS.alertaVer)],
+        loadChildren: () => import('./features/alertas/alertas.routes').then((m) => m.ALERTAS_ROUTES),
+      },
+      {
         path: 'pedidos',
         canActivate: [permissionGuard(PERMISOS.pedidoVer)],
         loadChildren: () => import('./features/pedidos/pedidos.routes').then((m) => m.PEDIDOS_ROUTES),

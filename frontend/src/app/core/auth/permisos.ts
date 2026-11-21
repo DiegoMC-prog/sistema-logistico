@@ -87,6 +87,9 @@ export const PERMISOS = {
 
   creditoGestionar: 'CREDITO_GESTIONAR',
 
+  /** Alertas de vencimiento y stock bajo. */
+  alertaVer: 'ALERTA_VER',
+
   reporteVentas: 'REPORTE_VENTAS',
   reporteCaja: 'REPORTE_CAJA',
   reporteInventario: 'REPORTE_INVENTARIO',

@@ -42,6 +42,7 @@ export const NAV_SECTIONS: readonly NavSection[] = [
       { label: 'Stock', path: '/inventario', icon: 'box', permiso: INVENTARIO },
       { label: 'Registrar movimiento', path: '/registrar-movimiento', icon: 'upload', permiso: PERMISOS.inventarioMover },
       { label: 'Movimientos', path: '/movimientos', icon: 'activity', permiso: INVENTARIO },
+      { label: 'Alertas', path: '/alertas', icon: 'bell', permiso: PERMISOS.alertaVer },
       { label: 'Lotes', path: '/lotes', icon: 'tag', permiso: [MODULOS.catalogo.editar, PERMISOS.inventarioVer] },
     ],
   },

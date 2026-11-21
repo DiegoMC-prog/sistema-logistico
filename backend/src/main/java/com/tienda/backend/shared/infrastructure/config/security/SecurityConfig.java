@@ -209,6 +209,9 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/v1/reportes/utilidad/**").hasAuthority(REPORTE_UTILIDAD)
                         .requestMatchers(HttpMethod.GET, "/api/v1/reportes/compras/**").hasAuthority(REPORTE_COMPRAS)
 
+                        // Alertas de vencimiento y stock bajo: consultar, marcar leídas y forzar la revisión
+                        .requestMatchers("/api/v1/alertas", "/api/v1/alertas/**").hasAuthority(ALERTA_VER)
+
                         // Inventario: consultar con INVENTARIO_VER; registrar movimientos con INVENTARIO_MOVER
                         .requestMatchers(HttpMethod.GET, "/api/v1/inventario/**")
                                 .hasAnyAuthority(INVENTARIO_VER, INVENTARIO_MOVER)
