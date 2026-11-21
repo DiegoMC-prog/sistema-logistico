@@ -20,7 +20,9 @@ export const toastInterceptor: HttpInterceptorFn = (req, next) => {
   const toast = inject(ToastService);
   if (req.url.includes('/auth/')) return next(req);
 
-  const exito = req.context.get(TOAST_MESSAGE) ?? EXITO_POR_METODO[req.method];
+  // undefined = mensaje por método; null = sin aviso de éxito (withToast(null)); texto = ese mensaje
+  const propio = req.context.get(TOAST_MESSAGE);
+  const exito = propio === undefined ? EXITO_POR_METODO[req.method] : propio;
 
   return next(req).pipe(
     tap((event: HttpEvent<unknown>) => {
