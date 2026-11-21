@@ -11,6 +11,7 @@ import com.tienda.backend.auth.application.port.in.LoginUseCase;
 import com.tienda.backend.auth.application.port.in.ObtenerPerfilUseCase;
 import com.tienda.backend.auth.application.port.in.RefrescarSesionUseCase;
 import com.tienda.backend.auth.application.port.in.RevocarAccesoUseCase;
+import com.tienda.backend.auth.application.port.in.VerificarCredencialesUseCase;
 import com.tienda.backend.auth.application.port.out.NotificadorCambioPasswordPort;
 import com.tienda.backend.auth.application.port.out.PasswordVerifierPort;
 import com.tienda.backend.auth.application.port.out.RevocacionTokensPort;
@@ -28,9 +29,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Locale;
 import java.util.Optional;
-import java.util.UUID;
 
 @Service
 public class AuthService implements LoginUseCase, RefrescarSesionUseCase, CerrarSesionUseCase,
@@ -42,40 +41,31 @@ public class AuthService implements LoginUseCase, RefrescarSesionUseCase, Cerrar
     private final RevocacionTokensPort revocacionTokensPort;
     private final PasswordVerifierPort passwordVerifierPort;
     private final NotificadorCambioPasswordPort notificadorCambioPasswordPort;
-
-    /** Hash de relleno: se compara cuando el usuario no existe para que el login tarde igual y no revele si existe. */
-    private final String hashFicticio;
+    private final VerificarCredencialesUseCase verificarCredenciales;
 
     public AuthService(UsuarioAutenticacionPort usuarioAutenticacionPort,
                        SesionRepositoryPort sesionRepositoryPort,
                        TokenPort tokenPort,
                        RevocacionTokensPort revocacionTokensPort,
                        PasswordVerifierPort passwordVerifierPort,
-                       NotificadorCambioPasswordPort notificadorCambioPasswordPort) {
+                       NotificadorCambioPasswordPort notificadorCambioPasswordPort,
+                       VerificarCredencialesUseCase verificarCredenciales) {
         this.usuarioAutenticacionPort = usuarioAutenticacionPort;
         this.sesionRepositoryPort = sesionRepositoryPort;
         this.tokenPort = tokenPort;
         this.revocacionTokensPort = revocacionTokensPort;
         this.passwordVerifierPort = passwordVerifierPort;
         this.notificadorCambioPasswordPort = notificadorCambioPasswordPort;
-        this.hashFicticio = passwordVerifierPort.encode(UUID.randomUUID().toString());
+        this.verificarCredenciales = verificarCredenciales;
     }
 
+    /** Acepta usuario o correo (RF-01) y bloquea la cuenta tras varios intentos fallidos (R06). */
     @Override
     @Transactional
     public ParTokens login(LoginComando comando) {
-        String username = comando.username() == null ? "" : comando.username().trim().toLowerCase(Locale.ROOT);
-        String password = comando.password() == null ? "" : comando.password();
+        Long usuarioId = verificarCredenciales.verificar(comando.username(), comando.password());
 
-        Optional<CredencialesUsuario> credenciales = usuarioAutenticacionPort.buscarCredencialesPorUsername(username);
-        String hash = credenciales.map(CredencialesUsuario::passwordHash).orElse(hashFicticio);
-        boolean passwordCorrecta = passwordVerifierPort.matches(password, hash);
-
-        if (credenciales.isEmpty() || !passwordCorrecta || !credenciales.get().activo()) {
-            throw new CredencialesInvalidasException();
-        }
-
-        DatosAcceso datos = usuarioAutenticacionPort.cargarDatosAcceso(credenciales.get().usuarioId())
+        DatosAcceso datos = usuarioAutenticacionPort.cargarDatosAcceso(usuarioId)
                 .orElseThrow(CredencialesInvalidasException::new);
 
         String refreshToken = tokenPort.generarRefreshToken();

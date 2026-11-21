@@ -5,6 +5,7 @@ import com.tienda.backend.auth.application.model.CredencialesUsuario;
 import com.tienda.backend.auth.application.model.OrigenCambioPassword;
 import com.tienda.backend.auth.application.port.in.RestablecerPasswordUseCase;
 import com.tienda.backend.auth.application.port.in.SolicitarRestablecimientoUseCase;
+import com.tienda.backend.auth.application.port.out.BloqueoCuentaPort;
 import com.tienda.backend.auth.application.port.out.LimitadorSolicitudesPort;
 import com.tienda.backend.auth.application.port.out.NotificadorCambioPasswordPort;
 import com.tienda.backend.auth.application.port.out.NotificadorRestablecimientoPort;
@@ -48,6 +49,7 @@ public class RestablecimientoPasswordService implements SolicitarRestablecimient
     private final LimitadorSolicitudesPort limitadorSolicitudesPort;
     private final NotificadorRestablecimientoPort notificadorRestablecimientoPort;
     private final NotificadorCambioPasswordPort notificadorCambioPasswordPort;
+    private final BloqueoCuentaPort bloqueoCuentaPort;
 
     @Override
     @Transactional
@@ -103,6 +105,8 @@ public class RestablecimientoPasswordService implements SolicitarRestablecimient
         }
 
         usuarioAutenticacionPort.guardarPassword(usuarioId, passwordVerifierPort.encode(passwordNueva));
+        // Restablecer es la salida de un bloqueo por intentos fallidos (R06)
+        bloqueoCuentaPort.reiniciar(usuarioId);
         restablecimientoRepositoryPort.invalidarPendientes(usuarioId, ahora);
         // La contraseña anterior deja de valer: nadie que la tuviera conserva la sesión
         sesionRepositoryPort.revocarTodasDeUsuario(usuarioId, ahora);

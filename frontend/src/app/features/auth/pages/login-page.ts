@@ -23,7 +23,7 @@ import { Field } from '../../../shared/ui/field';
             @if (error()) {
               <p class="alert-error" role="alert">{{ error() }}</p>
             }
-            <app-field label="Usuario" [control]="form.controls.username" required>
+            <app-field label="Usuario o correo" [control]="form.controls.username" required>
               <input class="field-input" formControlName="username" autocomplete="username" />
             </app-field>
             <app-field label="Contraseña" [control]="form.controls.password" required>

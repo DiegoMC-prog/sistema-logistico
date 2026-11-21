@@ -63,7 +63,8 @@ class RestablecimientoPasswordServiceTest {
         notificador = mock(NotificadorRestablecimientoPort.class);
         avisoCambio = mock(NotificadorCambioPasswordPort.class);
         servicio = new RestablecimientoPasswordService(usuarios, tokens, sesiones, revocacion, tokenPort, passwords,
-                limitador, notificador, avisoCambio);
+                limitador, notificador, avisoCambio,
+                mock(com.tienda.backend.auth.application.port.out.BloqueoCuentaPort.class));
 
         when(limitador.permitir(anyString())).thenReturn(true);
         when(tokenPort.generarTokenOpaco()).thenReturn("TOKEN-EN-CLARO");

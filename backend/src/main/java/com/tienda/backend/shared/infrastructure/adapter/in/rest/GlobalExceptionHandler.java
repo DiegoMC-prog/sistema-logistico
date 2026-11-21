@@ -2,6 +2,8 @@ package com.tienda.backend.shared.infrastructure.adapter.in.rest;
 
 import com.tienda.backend.shared.domain.exception.AccesoDenegadoException;
 import com.tienda.backend.shared.domain.exception.AutenticacionException;
+import com.tienda.backend.shared.domain.exception.AutorizacionInvalidaException;
+import com.tienda.backend.shared.domain.exception.AutorizacionRequeridaException;
 import com.tienda.backend.shared.domain.exception.BusinessConflictException;
 import com.tienda.backend.shared.domain.exception.DemasiadasSolicitudesException;
 import com.tienda.backend.shared.domain.exception.InvalidBusinessRuleException;
@@ -45,6 +47,22 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(AccesoDenegadoException.class)
     public ProblemDetail handleAccesoDenegado(AccesoDenegadoException ex) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, ex.getMessage());
+    }
+
+    @ExceptionHandler(AutorizacionRequeridaException.class)
+    public ProblemDetail handleAutorizacionRequerida(AutorizacionRequeridaException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, ex.getMessage());
+        problem.setProperty("code", AutorizacionRequeridaException.CODIGO);
+        problem.setProperty("monto", ex.getMonto());
+        problem.setProperty("umbral", ex.getUmbral());
+        return problem;
+    }
+
+    @ExceptionHandler(AutorizacionInvalidaException.class)
+    public ProblemDetail handleAutorizacionInvalida(AutorizacionInvalidaException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, ex.getMessage());
+        problem.setProperty("code", AutorizacionInvalidaException.CODIGO);
+        return problem;
     }
 
     @ExceptionHandler(AutenticacionException.class)

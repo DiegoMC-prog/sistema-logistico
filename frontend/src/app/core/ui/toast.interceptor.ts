@@ -1,7 +1,7 @@
 import { HttpErrorResponse, HttpEvent, HttpInterceptorFn, HttpResponse } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { catchError, tap, throwError } from 'rxjs';
-import { errorMessage } from '../api/api-error';
+import { errorMessage, esErrorAutorizacion } from '../api/api-error';
 import { TOAST_MESSAGE, ToastService } from './toast';
 
 const EXITO_POR_METODO: Record<string, string> = {
@@ -31,6 +31,8 @@ export const toastInterceptor: HttpInterceptorFn = (req, next) => {
     catchError((err: unknown) => {
       if (err instanceof HttpErrorResponse) {
         if (err.status === 0) toast.error('No se pudo conectar con el servidor', { title: 'Sin conexión' });
+        // R08: la pantalla pide las credenciales del administrador; no es una falta de permiso
+        else if (err.status === 403 && esErrorAutorizacion(err)) { /* lo maneja la pantalla */ }
         else if (err.status === 403) toast.warning('No tienes permiso para realizar esta acción', { title: 'Sin permiso' });
         else if (err.status === 429) toast.warning(errorMessage(err, 'Demasiadas solicitudes: intenta más tarde'), { title: 'Demasiadas solicitudes' });
         else if (err.status >= 500) toast.error(errorMessage(err, 'Error del servidor'), { title: 'Error del servidor' });

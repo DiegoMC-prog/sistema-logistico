@@ -11,6 +11,9 @@ import java.util.Optional;
 public interface UsuarioAutenticacionPort {
     Optional<CredencialesUsuario> buscarCredencialesPorUsername(String username);
 
+    /** Por nombre de usuario o, si no hay, por correo electrónico (RF-01: se inicia sesión con cualquiera de los dos). */
+    Optional<CredencialesUsuario> buscarCredencialesPorIdentificador(String identificador);
+
     Optional<CredencialesUsuario> buscarCredencialesPorId(Long usuarioId);
 
     /** Busca por nombre de usuario o, si no hay, por correo electrónico (sin distinguir mayúsculas). */

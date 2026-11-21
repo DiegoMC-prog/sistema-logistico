@@ -102,6 +102,9 @@ public final class Permisos {
     // Recargos por escasez sobre el precio de venta (RF-35)
     public static final String RECARGO_GESTIONAR = "RECARGO_GESTIONAR";
 
+    // R08: autorizar devoluciones, cambios y anulaciones sobre el monto umbral (se verifica en el servicio)
+    public static final String OPERACION_AUTORIZAR = "OPERACION_AUTORIZAR";
+
     // Ventas, devoluciones y cambios
     public static final String VENTA_VER = "VENTA_VER";
     public static final String VENTA_CREAR = "VENTA_CREAR";

@@ -33,6 +33,15 @@ public class UsuarioAutenticacionAdapter implements UsuarioAutenticacionPort {
     }
 
     @Override
+    public Optional<CredencialesUsuario> buscarCredencialesPorIdentificador(String identificador) {
+        Optional<Usuario> usuario = usuarioRepositoryPort.findByUsername(identificador);
+        if (usuario.isEmpty() && identificador.contains("@")) {
+            usuario = usuarioRepositoryPort.findByEmail(identificador);
+        }
+        return usuario.map(this::credenciales);
+    }
+
+    @Override
     public Optional<CredencialesUsuario> buscarCredencialesPorId(Long usuarioId) {
         return usuarioRepositoryPort.findById(usuarioId).map(this::credenciales);
     }

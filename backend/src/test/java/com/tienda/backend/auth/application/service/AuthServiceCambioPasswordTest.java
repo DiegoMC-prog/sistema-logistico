@@ -38,7 +38,8 @@ class AuthServiceCambioPasswordTest {
         passwords = mock(PasswordVerifierPort.class);
         aviso = mock(NotificadorCambioPasswordPort.class);
         servicio = new AuthService(usuarios, mock(SesionRepositoryPort.class), mock(TokenPort.class),
-                mock(RevocacionTokensPort.class), passwords, aviso);
+                mock(RevocacionTokensPort.class), passwords, aviso,
+                mock(com.tienda.backend.auth.application.port.in.VerificarCredencialesUseCase.class));
 
         when(usuarios.buscarCredencialesPorId(USUARIO)).thenReturn(Optional.of(new CredencialesUsuario(USUARIO, "hashActual", true)));
         when(usuarios.buscarContactoPorId(USUARIO)).thenReturn(Optional.of(CONTACTO));
