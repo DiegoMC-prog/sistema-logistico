@@ -81,7 +81,7 @@ public class CalculadoraReorden {
         if (datos.enTransito() > 0) {
             motivo.append(" + ").append(n(datos.enTransito())).append(" en camino");
         }
-        motivo.append(") ").append(reordenar ? "≤" : ">").append(" punto de reorden ").append(n(estandar.puntoReorden()))
+        motivo.append(") ").append(reordenar ? "<=" : ">").append(" punto de reorden ").append(n(estandar.puntoReorden()))
                 .append(" = demanda media ").append(n(demanda.media())).append("/día × lead time ")
                 .append(n(leadTime.media())).append(" días + stock de seguridad ").append(n(estandar.stockSeguridad()))
                 .append(" (nivel de servicio ").append(n(p.nivelServicio() * 100)).append(" %)");
