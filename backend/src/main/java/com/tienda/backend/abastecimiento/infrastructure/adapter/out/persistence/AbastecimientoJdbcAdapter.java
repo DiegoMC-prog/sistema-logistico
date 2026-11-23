@@ -334,8 +334,9 @@ public class AbastecimientoJdbcAdapter implements AbastecimientoRepositoryPort {
         argsPagina.add(size);
         argsPagina.add((long) page * size);
         // Primero lo que hay que pedir (y con mayor faltante respecto del punto de reorden), luego el resto
-        List<SugerenciaResumen> contenido = jdbc.query(SELECT_SUGERENCIA + where + """
-                 ORDER BY CASE s.estado WHEN 'REORDENAR' THEN 0 WHEN 'SIN_NECESIDAD' THEN 1 ELSE 2 END,
+        // El bloque de texto descarta la sangria comun, por eso el espacio previo va fuera de el
+        List<SugerenciaResumen> contenido = jdbc.query(SELECT_SUGERENCIA + where + " " + """
+                ORDER BY CASE s.estado WHEN 'REORDENAR' THEN 0 WHEN 'SIN_NECESIDAD' THEN 1 ELSE 2 END,
                           CASE s.accion WHEN 'PENDIENTE' THEN 0 ELSE 1 END,
                           (s.stock_actual + s.en_transito) - s.punto_reorden_estandar,
                           p.nombre
