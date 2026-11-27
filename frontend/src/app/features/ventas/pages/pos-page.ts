@@ -269,8 +269,9 @@ export class PosPage {
 
   private cargarTurno(): void {
     this.cargandoTurno.set(true);
-    // GET /turnos filtra automáticamente a los turnos propios.
-    this.turnos.list({ estado: 'ABIERTO', size: 1 }).subscribe({
+    // Se pide el turno propio explícitamente: a un supervisor GET /turnos le devuelve también los de otros usuarios,
+    // y la venta solo se puede registrar en el turno de quien cobra.
+    this.turnos.list({ estado: 'ABIERTO', usuarioId: this.auth.perfil()!.id, size: 1 }).subscribe({
       next: (p) => {
         const abierto = p.content[0];
         if (!abierto) return this.sinTurno();
