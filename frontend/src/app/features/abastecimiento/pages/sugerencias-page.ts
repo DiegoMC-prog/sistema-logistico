@@ -10,6 +10,7 @@ import { Btn, IconBtn } from '../../../shared/ui/button';
 import { Card } from '../../../shared/ui/card';
 import { EmptyState } from '../../../shared/ui/empty-state';
 import { FilterSelect } from '../../../shared/ui/filter-select';
+import { tamanoPagina } from '../../../shared/ui/page-size';
 import { Paginator } from '../../../shared/ui/paginator';
 import { SearchInput } from '../../../shared/ui/search-input';
 import { StatCard } from '../../../shared/ui/stat-card';
@@ -284,8 +285,8 @@ const TONO_ACCION: Record<AccionSugerencia, BadgeTone> = {
                 </tbody>
               </table>
             </div>
-            @if (p.totalPages > 1) {
-              <app-paginator [page]="p.page" [size]="p.size" [totalPages]="p.totalPages" [totalElements]="p.totalElements" (pageChange)="irA($event)" />
+            @if (p.totalElements > 10) {
+              <app-paginator [page]="p.page" [size]="p.size" [totalPages]="p.totalPages" [totalElements]="p.totalElements" (pageChange)="irA($event)" (sizeChange)="cambiarTamano($event)" />
             }
           }
         } @else if (!error()) {
@@ -334,7 +335,7 @@ export class SugerenciasPage {
   protected readonly seleccion = computed(() => new Set(this.elegidasMap().keys()));
   protected readonly elegidas = computed(() => [...this.elegidasMap().values()]);
 
-  private filtro: SugerenciaFiltro = { estado: undefined, page: 0, size: 20 };
+  private filtro: SugerenciaFiltro = { estado: undefined, page: 0, size: tamanoPagina(10) };
 
   constructor() {
     this.cargarCalculo();
@@ -393,6 +394,11 @@ export class SugerenciasPage {
 
   protected cambiarAccion(valor: string): void {
     this.filtro = { ...this.filtro, accion: (valor || undefined) as AccionSugerencia | undefined, page: 0 };
+    this.cargar();
+  }
+
+  protected cambiarTamano(size: number): void {
+    this.filtro = { ...this.filtro, size, page: 0 };
     this.cargar();
   }
 

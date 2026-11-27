@@ -1,5 +1,6 @@
 import { signal } from '@angular/core';
 import { Observable } from 'rxjs';
+import { tamanoPagina } from '../../shared/ui/page-size';
 import { errorMessage } from './api-error';
 import { Page, PageParams } from './page.model';
 
@@ -8,7 +9,7 @@ export class PagedList<T, F extends PageParams = PageParams> {
   readonly data = signal<Page<T> | null>(null);
   readonly loading = signal(false);
   readonly error = signal<string | null>(null);
-  readonly size: number;
+  private size: number;
 
   private filters: Partial<F> = {};
   private page = 0;
@@ -16,9 +17,9 @@ export class PagedList<T, F extends PageParams = PageParams> {
 
   constructor(
     private readonly fetch: (filters: F) => Observable<Page<T>>,
-    size = 10,
+    porDefecto = 10,
   ) {
-    this.size = size;
+    this.size = tamanoPagina(porDefecto);
     this.load(0);
   }
 
@@ -46,6 +47,12 @@ export class PagedList<T, F extends PageParams = PageParams> {
   /** Aplica filtros nuevos y vuelve a la primera página. */
   setFilters(patch: Partial<F>): void {
     this.filters = { ...this.filters, ...patch };
+    this.load(0);
+  }
+
+  /** Cambia los registros por página y vuelve a la primera. */
+  setSize(size: number): void {
+    this.size = size;
     this.load(0);
   }
 

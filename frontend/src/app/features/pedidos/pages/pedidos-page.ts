@@ -80,7 +80,7 @@ import { PedidosService } from '../data/pedidos.service';
                 </tbody>
               </table>
             </div>
-            <app-paginator [page]="d.page" [size]="d.size" [totalPages]="d.totalPages" [totalElements]="d.totalElements" (pageChange)="list.load($event)" />
+            <app-paginator [page]="d.page" [size]="d.size" [totalPages]="d.totalPages" [totalElements]="d.totalElements" (pageChange)="list.load($event)" (sizeChange)="list.setSize($event)" />
           }
         } @else if (list.loading()) {
           <app-table-skeleton />

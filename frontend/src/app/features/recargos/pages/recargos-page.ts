@@ -8,6 +8,7 @@ import { Card } from '../../../shared/ui/card';
 import { ConfirmDialog } from '../../../shared/ui/confirm-dialog';
 import { EmptyState } from '../../../shared/ui/empty-state';
 import { FilterSelect } from '../../../shared/ui/filter-select';
+import { tamanoPagina } from '../../../shared/ui/page-size';
 import { Paginator } from '../../../shared/ui/paginator';
 import { SearchInput } from '../../../shared/ui/search-input';
 import { TableSkeleton } from '../../../shared/ui/table-skeleton';
@@ -96,8 +97,8 @@ import { RecargosService } from '../data/recargos.service';
                 </tbody>
               </table>
             </div>
-            @if (p.totalPages > 1) {
-              <app-paginator [page]="p.page" [size]="p.size" [totalPages]="p.totalPages" [totalElements]="p.totalElements" (pageChange)="irA($event)" />
+            @if (p.totalElements > 10) {
+              <app-paginator [page]="p.page" [size]="p.size" [totalPages]="p.totalPages" [totalElements]="p.totalElements" (pageChange)="irA($event)" (sizeChange)="cambiarTamano($event)" />
             }
           }
         } @else if (!error()) {
@@ -135,7 +136,7 @@ export class RecargosPage {
   protected readonly desactivando = signal(false);
   protected readonly errorDesactivar = signal<string | null>(null);
 
-  private filtro: RecargoFiltro = { page: 0, size: 20 };
+  private filtro: RecargoFiltro = { page: 0, size: tamanoPagina(20) };
 
   constructor() {
     this.cargar();
@@ -153,6 +154,11 @@ export class RecargosPage {
 
   protected cambiarAlcance(valor: string): void {
     this.filtro = { ...this.filtro, alcance: (valor || undefined) as AlcanceRecargo | undefined, page: 0 };
+    this.cargar();
+  }
+
+  protected cambiarTamano(size: number): void {
+    this.filtro = { ...this.filtro, size, page: 0 };
     this.cargar();
   }
 

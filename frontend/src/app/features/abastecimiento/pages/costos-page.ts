@@ -1,5 +1,5 @@
 import { DatePipe, DecimalPipe } from '@angular/common';
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { errorMessage } from '../../../core/api/api-error';
 import { Page } from '../../../core/api/page.model';
@@ -7,6 +7,7 @@ import { Badge } from '../../../shared/ui/badge';
 import { IconBtn } from '../../../shared/ui/button';
 import { Card } from '../../../shared/ui/card';
 import { EmptyState } from '../../../shared/ui/empty-state';
+import { tamanoPagina } from '../../../shared/ui/page-size';
 import { Paginator } from '../../../shared/ui/paginator';
 import { SearchInput } from '../../../shared/ui/search-input';
 import { TableSkeleton } from '../../../shared/ui/table-skeleton';
@@ -55,7 +56,7 @@ import { AbastecimientoService } from '../data/abastecimiento.service';
                   </tr>
                 </thead>
                 <tbody>
-                  @for (p of lista; track p.proveedorId) {
+                  @for (p of proveedoresVisibles(); track p.proveedorId) {
                     <tr class="cursor-pointer" [class.bg-accent-soft]="filtro.proveedorId === p.proveedorId" (click)="elegirProveedor(p)">
                       <td class="text-sm font-semibold text-ink">
                         <button type="button" class="text-left hover:underline" [attr.aria-pressed]="filtro.proveedorId === p.proveedorId">{{ p.proveedor }}</button>
@@ -72,6 +73,10 @@ import { AbastecimientoService } from '../data/abastecimiento.service';
                 </tbody>
               </table>
             </div>
+            @if (lista.length > 10) {
+              <app-paginator [page]="paginaProveedores()" [size]="tamanoProveedores()" [totalPages]="totalPaginasProveedores()"
+                [totalElements]="lista.length" (pageChange)="paginaProveedores.set($event)" (sizeChange)="cambiarTamanoProveedores($event)" />
+            }
           }
         } @else if (!error()) {
           <app-table-skeleton />
@@ -175,8 +180,8 @@ import { AbastecimientoService } from '../data/abastecimiento.service';
                 </tbody>
               </table>
             </div>
-            @if (p.totalPages > 1) {
-              <app-paginator [page]="p.page" [size]="p.size" [totalPages]="p.totalPages" [totalElements]="p.totalElements" (pageChange)="irA($event)" />
+            @if (p.totalElements > 10) {
+              <app-paginator [page]="p.page" [size]="p.size" [totalPages]="p.totalPages" [totalElements]="p.totalElements" (pageChange)="irA($event)" (sizeChange)="cambiarTamano($event)" />
             }
           }
         } @else if (!error()) {
@@ -191,12 +196,20 @@ export class CostosPage {
 
   protected readonly proveedores = signal<VariacionProveedor[] | null>(null);
   protected readonly pagina = signal<Page<VariacionCosto> | null>(null);
+
+  protected readonly paginaProveedores = signal(0);
+  protected readonly tamanoProveedores = signal(tamanoPagina(10));
+  protected readonly totalPaginasProveedores = computed(() => Math.ceil((this.proveedores()?.length ?? 0) / this.tamanoProveedores()));
+  protected readonly proveedoresVisibles = computed(() => {
+    const desde = this.paginaProveedores() * this.tamanoProveedores();
+    return (this.proveedores() ?? []).slice(desde, desde + this.tamanoProveedores());
+  });
   protected readonly historial = signal<HistoricoCosto[] | null>(null);
   protected readonly abierta = signal<string | null>(null);
   protected readonly proveedorElegido = signal<string | null>(null);
   protected readonly error = signal<string | null>(null);
 
-  protected filtro: CostoFiltro = { page: 0, size: 20 };
+  protected filtro: CostoFiltro = { page: 0, size: tamanoPagina(10) };
 
   constructor() {
     this.service.variacionProveedores().subscribe({
@@ -249,6 +262,11 @@ export class CostosPage {
     this.cargar();
   }
 
+  protected cambiarTamanoProveedores(size: number): void {
+    this.tamanoProveedores.set(size);
+    this.paginaProveedores.set(0);
+  }
+
   protected quitarProveedor(): void {
     this.proveedorElegido.set(null);
     this.filtro = { ...this.filtro, proveedorId: undefined, page: 0 };
@@ -257,6 +275,11 @@ export class CostosPage {
 
   protected buscar(texto: string): void {
     this.filtro = { ...this.filtro, search: texto || undefined, page: 0 };
+    this.cargar();
+  }
+
+  protected cambiarTamano(size: number): void {
+    this.filtro = { ...this.filtro, size, page: 0 };
     this.cargar();
   }
 

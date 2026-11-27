@@ -1,4 +1,5 @@
 import { Component, computed, input, output } from '@angular/core';
+import { TAMANOS_PAGINA, guardarTamanoPagina } from './page-size';
 
 @Component({
   selector: 'app-paginator',
@@ -6,11 +7,21 @@ import { Component, computed, input, output } from '@angular/core';
     <div
       class="flex flex-col items-center justify-between gap-3 border-t border-border px-5 py-4 text-sm text-muted sm:flex-row"
     >
-      <p>
-        Mostrando <span class="font-semibold text-ink">{{ from() }}–{{ to() }}</span> de
-        <span class="font-semibold text-ink">{{ totalElements() }}</span> registros
-      </p>
-      <div class="flex items-center gap-1">
+      <div class="flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
+        <p>
+          Mostrando <span class="font-semibold text-ink">{{ from() }}–{{ to() }}</span> de
+          <span class="font-semibold text-ink">{{ totalElements() }}</span> registros
+        </p>
+        <label class="flex items-center gap-2">
+          Por página
+          <select class="field-input !h-9 !w-20" (change)="cambiarTamano($any($event.target).value)">
+            @for (t of tamanos; track t) {
+              <option [value]="t" [selected]="t === size()">{{ t }}</option>
+            }
+          </select>
+        </label>
+      </div>
+      <div class="flex flex-wrap items-center justify-center gap-1">
         <button type="button" class="btn-page px-3" [disabled]="page() <= 0" (click)="pageChange.emit(page() - 1)">
           Anterior
         </button>
@@ -62,6 +73,16 @@ export class Paginator {
   readonly totalPages = input.required<number>();
   readonly totalElements = input.required<number>();
   readonly pageChange = output<number>();
+  /** Nuevo tamaño elegido: la pantalla debe volver a la primera página. */
+  readonly sizeChange = output<number>();
+
+  protected readonly tamanos = TAMANOS_PAGINA;
+
+  protected cambiarTamano(valor: string): void {
+    const tamano = Number(valor);
+    guardarTamanoPagina(tamano);
+    this.sizeChange.emit(tamano);
+  }
 
   protected readonly from = computed(() => (this.totalElements() === 0 ? 0 : this.page() * this.size() + 1));
   protected readonly to = computed(() => Math.min((this.page() + 1) * this.size(), this.totalElements()));

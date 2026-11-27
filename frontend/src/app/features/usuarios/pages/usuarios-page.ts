@@ -146,7 +146,7 @@ import { UsuariosService } from '../data/usuarios.service';
             </div>
             <app-paginator
               [page]="d.page" [size]="d.size" [totalPages]="d.totalPages" [totalElements]="d.totalElements"
-              (pageChange)="list.load($event)"
+              (pageChange)="list.load($event)" (sizeChange)="list.setSize($event)"
             />
           }
         } @else if (list.loading()) {

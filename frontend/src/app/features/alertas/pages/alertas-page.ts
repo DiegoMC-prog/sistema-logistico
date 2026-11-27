@@ -8,6 +8,7 @@ import { Btn } from '../../../shared/ui/button';
 import { Card } from '../../../shared/ui/card';
 import { EmptyState } from '../../../shared/ui/empty-state';
 import { FilterSelect } from '../../../shared/ui/filter-select';
+import { tamanoPagina } from '../../../shared/ui/page-size';
 import { Paginator } from '../../../shared/ui/paginator';
 import { StatCard } from '../../../shared/ui/stat-card';
 import { TableSkeleton } from '../../../shared/ui/table-skeleton';
@@ -105,8 +106,8 @@ type Vista = 'pendientes' | 'activas' | 'todas';
                 </tbody>
               </table>
             </div>
-            @if (p.totalPages > 1) {
-              <app-paginator [page]="p.page" [size]="p.size" [totalPages]="p.totalPages" [totalElements]="p.totalElements" (pageChange)="irA($event)" />
+            @if (p.totalElements > 10) {
+              <app-paginator [page]="p.page" [size]="p.size" [totalPages]="p.totalPages" [totalElements]="p.totalElements" (pageChange)="irA($event)" (sizeChange)="cambiarTamano($event)" />
             }
           }
         } @else if (!error()) {
@@ -127,6 +128,7 @@ export class AlertasPage {
   private tipo: TipoAlerta | undefined;
   private vista: Vista = 'pendientes';
   private page = 0;
+  private size = tamanoPagina(20);
 
   constructor() {
     this.cargar();
@@ -148,6 +150,12 @@ export class AlertasPage {
 
   protected cambiarVista(valor: string): void {
     this.vista = (valor || 'pendientes') as Vista;
+    this.page = 0;
+    this.cargar();
+  }
+
+  protected cambiarTamano(size: number): void {
+    this.size = size;
     this.page = 0;
     this.cargar();
   }
@@ -206,7 +214,7 @@ export class AlertasPage {
       leida: this.vista === 'pendientes' ? false : undefined,
       incluirResueltas: this.vista === 'todas' ? true : undefined,
       page: this.page,
-      size: 20,
+      size: this.size,
     };
     this.error.set(null);
     this.service.listar(filtro).subscribe({
