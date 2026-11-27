@@ -14,6 +14,8 @@ import { TableSkeleton } from '../../../shared/ui/table-skeleton';
 import { CostoFiltro, HistoricoCosto, VariacionCosto, VariacionProveedor } from '../data/abastecimiento.model';
 import { AbastecimientoService } from '../data/abastecimiento.service';
 
+type Vista = 'proveedor' | 'producto';
+
 /**
  * Histórico de costos por proveedor (RF-35): indicador de variación de precios por proveedor y, por producto, la
  * evolución del costo con el detalle de cada compra. Las alzas marcadas son las que el motor de reorden usa para
@@ -34,10 +36,20 @@ import { AbastecimientoService } from '../data/abastecimiento.service';
 
       @if (error()) { <p class="alert-error" role="alert">{{ error() }}</p> }
 
-      <app-card class="overflow-hidden">
+      <div class="flex flex-wrap gap-2" role="tablist" aria-label="Vista de costos">
+        @for (v of vistas; track v.id) {
+          <button type="button" role="tab" [attr.aria-selected]="vista() === v.id"
+            class="h-10 rounded-lg border px-4 text-sm font-semibold transition"
+            [class]="vista() === v.id ? 'border-brand bg-brand text-white' : 'border-border bg-surface text-ink hover:bg-subtle'"
+            (click)="vista.set(v.id)">{{ v.label }}</button>
+        }
+      </div>
+
+      <!-- Las dos vistas se ocultan sin destruirse: conservan la búsqueda y la página al cambiar de pestaña -->
+      <app-card role="tabpanel" class="block overflow-hidden" [class.!hidden]="vista() !== 'proveedor'">
         <div class="border-b border-border px-5 py-3">
           <h3 class="text-sm font-semibold text-ink">Indicador por proveedor</h3>
-          <p class="text-xs text-muted">Promedio de la variación de los productos que se le compraron. Elija uno para ver solo sus productos.</p>
+          <p class="text-xs text-muted">Promedio de la variación de los productos que se le compraron. Elija uno para ver sus productos.</p>
         </div>
         @if (proveedores(); as lista) {
           @if (lista.length === 0) {
@@ -83,6 +95,7 @@ import { AbastecimientoService } from '../data/abastecimiento.service';
         }
       </app-card>
 
+      <div role="tabpanel" class="space-y-4" [class.hidden]="vista() !== 'producto'">
       <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
         <app-search-input class="sm:w-80" placeholder="Buscar producto o proveedor" (searched)="buscar($event)" />
         @if (proveedorElegido(); as p) {
@@ -188,6 +201,7 @@ import { AbastecimientoService } from '../data/abastecimiento.service';
           <app-table-skeleton />
         }
       </app-card>
+      </div>
     </div>
   `,
 })
@@ -196,6 +210,12 @@ export class CostosPage {
 
   protected readonly proveedores = signal<VariacionProveedor[] | null>(null);
   protected readonly pagina = signal<Page<VariacionCosto> | null>(null);
+
+  protected readonly vistas: { id: Vista; label: string }[] = [
+    { id: 'proveedor', label: 'Por proveedor' },
+    { id: 'producto', label: 'Por producto' },
+  ];
+  protected readonly vista = signal<Vista>('proveedor');
 
   protected readonly paginaProveedores = signal(0);
   protected readonly tamanoProveedores = signal(tamanoPagina(10));
@@ -252,11 +272,10 @@ export class CostosPage {
     });
   }
 
+  /** Lleva a la vista de productos, filtrada por ese proveedor. */
   protected elegirProveedor(p: VariacionProveedor): void {
-    if (this.filtro.proveedorId === p.proveedorId) {
-      this.quitarProveedor();
-      return;
-    }
+    this.vista.set('producto');
+    if (this.filtro.proveedorId === p.proveedorId) return;
     this.proveedorElegido.set(p.proveedor);
     this.filtro = { ...this.filtro, proveedorId: p.proveedorId, page: 0 };
     this.cargar();
