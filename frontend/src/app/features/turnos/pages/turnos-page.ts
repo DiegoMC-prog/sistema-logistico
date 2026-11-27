@@ -17,6 +17,7 @@ import { Paginator } from '../../../shared/ui/paginator';
 import { TableSkeleton } from '../../../shared/ui/table-skeleton';
 import { Caja } from '../../cajas/data/caja.model';
 import { CajasService } from '../../cajas/data/cajas.service';
+import { DepositosDeCajas } from '../../cajas/data/depositos-de-cajas';
 import { TurnoFilters, TurnoResumen } from '../data/turno.model';
 import { TurnosService } from '../data/turnos.service';
 
@@ -67,13 +68,14 @@ import { TurnosService } from '../data/turnos.service';
             <div class="overflow-x-auto">
               <table class="dt">
                 <thead>
-                  <tr><th>Turno</th><th>Caja</th><th>Apertura</th><th class="text-right">Monto apertura</th><th>Cierre</th><th class="text-right">Esperado</th><th class="text-right">Declarado</th><th>Estado</th><th class="text-right">Acciones</th></tr>
+                  <tr><th>Turno</th><th>Caja</th><th>Depósito</th><th>Apertura</th><th class="text-right">Monto apertura</th><th>Cierre</th><th class="text-right">Esperado</th><th class="text-right">Declarado</th><th>Estado</th><th class="text-right">Acciones</th></tr>
                 </thead>
                 <tbody>
                   @for (t of d.content; track t.id) {
                     <tr>
                       <td><a [routerLink]="['/turnos', t.id]" class="font-mono text-xs font-semibold text-accent hover:underline">#{{ t.id }}</a></td>
-                      <td class="text-sm font-semibold text-ink">{{ t.cajaNombre }}</td>
+                      <td class="whitespace-nowrap text-sm font-semibold text-ink">{{ t.cajaNombre }}</td>
+                      <td class="text-sm text-muted">{{ depositoDeCaja().get(t.cajaId) ?? '—' }}</td>
                       <td class="text-sm text-muted">{{ t.fechaApertura | date: 'dd/MM/yyyy HH:mm' }}</td>
                       <td class="text-right text-sm">{{ t.montoApertura | number: '1.2-2' }}</td>
                       <td class="text-sm text-muted">{{ t.fechaCierre ? (t.fechaCierre | date: 'dd/MM/yyyy HH:mm') : '—' }}</td>
@@ -106,7 +108,7 @@ import { TurnosService } from '../data/turnos.service';
             <app-field label="Caja" [control]="form.controls.cajaId" required>
               <select class="field-input" formControlName="cajaId">
                 <option [ngValue]="null" disabled>Selecciona una caja</option>
-                @for (c of cajasActivas(); track c.id) { <option [ngValue]="c.id">{{ c.nombre }}</option> }
+                @for (c of cajasActivas(); track c.id) { <option [ngValue]="c.id">{{ c.nombre }} — {{ depositoDeCaja().get(c.id) ?? '…' }}</option> }
               </select>
             </app-field>
             <app-field label="Monto de apertura" [control]="form.controls.montoApertura" required>
@@ -132,6 +134,7 @@ export class TurnosPage {
 
   protected readonly list = new PagedList<TurnoResumen, TurnoFilters>((f) => this.service.list(f));
   protected readonly cajas = signal<Caja[]>([]);
+  protected readonly depositoDeCaja = inject(DepositosDeCajas).porCaja();
 
   protected readonly formOpen = signal(false);
   protected readonly saving = signal(false);

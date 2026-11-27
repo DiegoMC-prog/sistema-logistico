@@ -14,6 +14,7 @@ import { Modal } from '../../../shared/ui/modal';
 import { SearchInput } from '../../../shared/ui/search-input';
 import { Caja } from '../../cajas/data/caja.model';
 import { CajasService } from '../../cajas/data/cajas.service';
+import { DepositosDeCajas } from '../../cajas/data/depositos-de-cajas';
 import { Cliente } from '../../clientes/data/cliente.model';
 import { ClientesService } from '../../clientes/data/clientes.service';
 import { MetodoPago } from '../../metodos-pago/data/metodo-pago.model';
@@ -62,7 +63,7 @@ interface PagoFila {
           <label class="block text-sm font-medium text-ink">Caja
             <select class="field-input mt-1" [ngModel]="cajaSel()" (ngModelChange)="cajaSel.set($event)">
               <option [ngValue]="null" disabled>Selecciona una caja</option>
-              @for (c of cajas(); track c.id) { <option [ngValue]="c.id">{{ c.nombre }}</option> }
+              @for (c of cajas(); track c.id) { <option [ngValue]="c.id">{{ c.nombre }} — {{ depositoDeCaja().get(c.id) ?? '…' }}</option> }
             </select>
           </label>
           <label class="block text-sm font-medium text-ink">Monto de apertura
@@ -78,7 +79,9 @@ interface PagoFila {
         <div class="min-w-0 space-y-6">
           <app-card class="block space-y-3 p-5">
             <div class="flex flex-wrap items-center justify-between gap-2 text-sm">
-              <span class="text-muted">Turno <a [routerLink]="['/turnos', turno()!.id]" class="font-semibold text-accent hover:underline">#{{ turno()!.id }}</a> · {{ turno()!.cajaNombre }}</span>
+              <span class="text-muted">Turno <a [routerLink]="['/turnos', turno()!.id]" class="font-semibold text-accent hover:underline">#{{ turno()!.id }}</a> · {{ turno()!.cajaNombre }}
+                @if (depositoDeCaja().get(turno()!.cajaId); as deposito) { · Depósito: <strong class="text-ink">{{ deposito }}</strong> }
+              </span>
               <span class="flex flex-wrap items-center gap-3">
                 <span class="text-muted">Efectivo esperado: <strong class="text-ink">{{ turno()!.efectivoEsperado | number: '1.2-2' }}</strong></span>
                 <a [routerLink]="['/turnos', turno()!.id]" class="inline-flex h-9 items-center gap-2 rounded-lg border border-border bg-surface px-3 text-sm font-semibold text-ink hover:bg-subtle">
@@ -225,6 +228,7 @@ export class PosPage {
   private readonly auth = inject(AuthService);
   private readonly turnos = inject(TurnosService);
   private readonly cajasService = inject(CajasService);
+  protected readonly depositoDeCaja = inject(DepositosDeCajas).porCaja();
   private readonly clientesService = inject(ClientesService);
   private readonly metodosService = inject(MetodosPagoService);
   private readonly preciosService = inject(PreciosService);

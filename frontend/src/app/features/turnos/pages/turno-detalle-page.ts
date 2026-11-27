@@ -11,6 +11,7 @@ import { Card } from '../../../shared/ui/card';
 import { Field } from '../../../shared/ui/field';
 import { Modal } from '../../../shared/ui/modal';
 import { StatCard } from '../../../shared/ui/stat-card';
+import { DepositosDeCajas } from '../../cajas/data/depositos-de-cajas';
 import { MovimientoCaja, Turno } from '../data/turno.model';
 import { TurnosService } from '../data/turnos.service';
 
@@ -34,6 +35,9 @@ import { TurnosService } from '../data/turnos.service';
               Abierto el {{ t.fechaApertura | date: 'dd/MM/yyyy HH:mm' }}
               @if (t.fechaCierre) { · cerrado el {{ t.fechaCierre | date: 'dd/MM/yyyy HH:mm' }} }
             </p>
+            @if (depositoDeCaja().get(t.cajaId); as deposito) {
+              <p class="mt-1 text-sm text-muted">Vende desde el depósito <strong class="text-ink">{{ deposito }}</strong></p>
+            }
           </div>
           @if (t.estado === 'ABIERTO') {
             <div class="flex gap-3">
@@ -161,6 +165,7 @@ import { TurnosService } from '../data/turnos.service';
 })
 export class TurnoDetallePage {
   private readonly service = inject(TurnosService);
+  protected readonly depositoDeCaja = inject(DepositosDeCajas).porCaja();
   private readonly fb = inject(FormBuilder).nonNullable;
   private readonly auth = inject(AuthService);
   private readonly id = Number(inject(ActivatedRoute).snapshot.paramMap.get('id'));
