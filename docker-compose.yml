@@ -58,6 +58,8 @@ services:
     ports:
       # Solo este equipo. Desde fuera se entra por el tunel (nginx confia en sus cabeceras)
       - "127.0.0.1:${WEB_PORT:-80}:80"
+      # Tambien IPv6: sin esto cada conexion a "localhost" desde Windows pierde ~200 ms intentando ::1
+      - "[::1]:${WEB_PORT:-80}:80"
 
   # Demostracion por Internet sin dominio ni cuenta (Cloudflare quick tunnel). No arranca salvo que se pida:
   #   docker compose --profile demo up -d
