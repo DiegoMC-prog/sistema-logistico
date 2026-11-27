@@ -67,7 +67,7 @@ import { TurnosService } from '../data/turnos.service';
             <div class="overflow-x-auto">
               <table class="dt">
                 <thead>
-                  <tr><th>Turno</th><th>Caja</th><th>Apertura</th><th class="text-right">Monto apertura</th><th>Cierre</th><th class="text-right">Esperado</th><th class="text-right">Declarado</th><th>Estado</th></tr>
+                  <tr><th>Turno</th><th>Caja</th><th>Apertura</th><th class="text-right">Monto apertura</th><th>Cierre</th><th class="text-right">Esperado</th><th class="text-right">Declarado</th><th>Estado</th><th class="text-right">Acciones</th></tr>
                 </thead>
                 <tbody>
                   @for (t of d.content; track t.id) {
@@ -80,6 +80,11 @@ import { TurnosService } from '../data/turnos.service';
                       <td class="text-right text-sm">{{ t.montoCierreEsperado === null ? '—' : (t.montoCierreEsperado | number: '1.2-2') }}</td>
                       <td class="text-right text-sm">{{ t.montoCierreDeclarado === null ? '—' : (t.montoCierreDeclarado | number: '1.2-2') }}</td>
                       <td><app-badge [tone]="t.estado === 'ABIERTO' ? 'success' : 'neutral'">{{ t.estado === 'ABIERTO' ? 'Abierto' : 'Cerrado' }}</app-badge></td>
+                      <td class="text-right">
+                        <a [routerLink]="['/turnos', t.id]" class="inline-flex h-9 items-center whitespace-nowrap rounded-lg border border-border bg-surface px-3 text-xs font-semibold text-ink hover:bg-subtle">
+                          {{ t.estado === 'ABIERTO' && puedeCerrar ? 'Ver / Cerrar' : 'Ver' }}
+                        </a>
+                      </td>
                     </tr>
                   }
                 </tbody>
@@ -123,6 +128,7 @@ export class TurnosPage {
   private readonly router = inject(Router);
   private readonly fb = inject(FormBuilder).nonNullable;
   protected readonly puedeAbrir = inject(AuthService).hasPermission(PERMISOS.cajaAbrir);
+  protected readonly puedeCerrar = inject(AuthService).hasPermission(PERMISOS.cajaCerrar);
 
   protected readonly list = new PagedList<TurnoResumen, TurnoFilters>((f) => this.service.list(f));
   protected readonly cajas = signal<Caja[]>([]);

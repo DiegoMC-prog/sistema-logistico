@@ -79,7 +79,12 @@ interface PagoFila {
           <app-card class="block space-y-3 p-5">
             <div class="flex flex-wrap items-center justify-between gap-2 text-sm">
               <span class="text-muted">Turno <a [routerLink]="['/turnos', turno()!.id]" class="font-semibold text-accent hover:underline">#{{ turno()!.id }}</a> · {{ turno()!.cajaNombre }}</span>
-              <span class="text-muted">Efectivo esperado: <strong class="text-ink">{{ turno()!.efectivoEsperado | number: '1.2-2' }}</strong></span>
+              <span class="flex flex-wrap items-center gap-3">
+                <span class="text-muted">Efectivo esperado: <strong class="text-ink">{{ turno()!.efectivoEsperado | number: '1.2-2' }}</strong></span>
+                <a [routerLink]="['/turnos', turno()!.id]" class="inline-flex h-9 items-center gap-2 rounded-lg border border-border bg-surface px-3 text-sm font-semibold text-ink hover:bg-subtle">
+                  <app-icon name="wallet" class="size-4" />{{ puedeCerrar ? 'Ver turno / Cerrar caja' : 'Ver turno' }}
+                </a>
+              </span>
             </div>
             <app-product-picker [catalogo]="depositoId() !== null" [depositoId]="depositoId()"
               [tipoClienteId]="cliente()?.tipoCliente?.id ?? null" [conPrecios]="true" [bloquearAgotados]="true"
@@ -226,6 +231,7 @@ export class PosPage {
   private readonly ventasService = inject(VentasService);
 
   protected readonly puedeAbrir = this.auth.hasPermission(PERMISOS.cajaAbrir);
+  protected readonly puedeCerrar = this.auth.hasPermission(PERMISOS.cajaCerrar);
   protected readonly puedeModificarPrecio = this.auth.hasPermission(PERMISOS.ventaPrecioModificar);
 
   // Turno
