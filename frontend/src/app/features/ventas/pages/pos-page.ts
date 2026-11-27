@@ -1,5 +1,5 @@
 import { DecimalPipe } from '@angular/common';
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { Observable, catchError, throwError, timer, switchMap } from 'rxjs';
@@ -74,14 +74,16 @@ interface PagoFila {
         }
       </app-card>
     } @else {
-      <div class="grid gap-6 xl:grid-cols-[1fr_26rem]">
-        <div class="space-y-6">
+      <div class="grid grid-cols-[minmax(0,1fr)] gap-6 xl:grid-cols-[minmax(0,1fr)_26rem]">
+        <div class="min-w-0 space-y-6">
           <app-card class="block space-y-3 p-5">
             <div class="flex flex-wrap items-center justify-between gap-2 text-sm">
               <span class="text-muted">Turno <a [routerLink]="['/turnos', turno()!.id]" class="font-semibold text-accent hover:underline">#{{ turno()!.id }}</a> · {{ turno()!.cajaNombre }}</span>
               <span class="text-muted">Efectivo esperado: <strong class="text-ink">{{ turno()!.efectivoEsperado | number: '1.2-2' }}</strong></span>
             </div>
-            <app-product-picker (picked)="agregar($event)" />
+            <app-product-picker [catalogo]="depositoId() !== null" [depositoId]="depositoId()"
+              [tipoClienteId]="cliente()?.tipoCliente?.id ?? null" [conPrecios]="true" [bloquearAgotados]="true"
+              [version]="versionCatalogo()" (picked)="agregar($event)" />
           </app-card>
 
           <app-card class="overflow-hidden">
@@ -228,6 +230,9 @@ export class PosPage {
 
   // Turno
   protected readonly turno = signal<Turno | null>(null);
+  /** Depósito de la caja del turno: de ahí sale el stock que muestra el catálogo. */
+  protected readonly depositoId = signal<number | null>(null);
+  protected readonly versionCatalogo = signal(0);
   protected readonly cargandoTurno = signal(true);
   protected readonly errorTurno = signal<string | null>(null);
   protected readonly cajas = signal<Caja[]>([]);
@@ -263,6 +268,16 @@ export class PosPage {
   constructor() {
     this.cargarTurno();
     this.metodosService.paraCobro().subscribe({ next: (m) => this.metodos.set(m) });
+    effect(() => {
+      const cajaId = this.turno()?.cajaId;
+      if (cajaId === undefined) return;
+      untracked(() =>
+        this.cajasService.get(cajaId).subscribe({
+          next: (c) => this.depositoId.set(c.depositoId),
+          error: (e) => this.error.set(errorMessage(e, 'No se pudo cargar la caja')),
+        }),
+      );
+    });
   }
 
   // --- Turno ---
@@ -319,6 +334,7 @@ export class PosPage {
   }
 
   private refrescarTurno(): void {
+    this.versionCatalogo.update((v) => v + 1); // la venta cambió el stock
     const t = this.turno();
     if (t) this.turnos.get(t.id).subscribe({ next: (n) => this.turno.set(n) });
   }

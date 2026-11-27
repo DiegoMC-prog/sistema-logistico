@@ -1,8 +1,9 @@
-import { Component, inject, output, signal } from '@angular/core';
+import { Component, inject, input, output, signal } from '@angular/core';
 import { forkJoin, of, switchMap } from 'rxjs';
 import { errorMessage } from '../../../core/api/api-error';
 import { Icon } from '../../../shared/ui/icon';
 import { SearchInput } from '../../../shared/ui/search-input';
+import { CatalogoProductos, EleccionCatalogo } from '../../catalogo/catalogo-productos';
 import { PresentacionesService } from '../../productos/data/presentaciones.service';
 import { Presentacion, Producto } from '../../productos/data/producto.model';
 import { ProductosService } from '../../productos/data/productos.service';
@@ -14,10 +15,10 @@ export interface ItemElegido {
   unidad: string;
 }
 
-/** Escáner de código de barras + buscador por nombre de producto. Emite la presentación elegida. */
+/** Escáner de código de barras + catálogo o buscador por nombre. Emite la presentación elegida. */
 @Component({
   selector: 'app-product-picker',
-  imports: [Icon, SearchInput],
+  imports: [CatalogoProductos, Icon, SearchInput],
   template: `
     <div class="space-y-3">
       <label class="relative block">
@@ -25,6 +26,11 @@ export interface ItemElegido {
         <input class="field-input !h-11 pl-10" placeholder="Escanear o escribir código de barras y presionar Enter"
           autocomplete="off" (keydown.enter)="escanear($any($event.target))" />
       </label>
+      @if (catalogo()) {
+        @if (error()) { <p class="alert-error" role="alert">{{ error() }}</p> }
+        <app-catalogo-productos [depositoId]="depositoId()" [tipoClienteId]="tipoClienteId()" [conPrecios]="conPrecios()"
+          [bloquearAgotados]="bloquearAgotados()" [version]="version()" (elegido)="elegirDelCatalogo($event)" />
+      } @else {
       <app-search-input class="!max-w-none" placeholder="…o buscar producto por nombre" (searched)="buscar($event)" />
 
       @if (error()) { <p class="alert-error" role="alert">{{ error() }}</p> }
@@ -60,6 +66,7 @@ export interface ItemElegido {
           </div>
         </div>
       }
+      }
     </div>
   `,
 })
@@ -67,12 +74,27 @@ export class ProductPicker {
   private readonly productosService = inject(ProductosService);
   private readonly presentacionesService = inject(PresentacionesService);
 
+  /** Muestra el catálogo en tarjetas en lugar del buscador simple. */
+  readonly catalogo = input(false);
+  readonly depositoId = input<number | null>(null);
+  readonly tipoClienteId = input<number | null>(null);
+  readonly conPrecios = input(false);
+  readonly bloquearAgotados = input(false);
+  readonly version = input(0);
   readonly picked = output<ItemElegido>();
 
   protected readonly productos = signal<Producto[]>([]);
   protected readonly producto = signal<Producto | null>(null);
   protected readonly presentaciones = signal<Presentacion[]>([]);
   protected readonly error = signal<string | null>(null);
+
+  protected elegirDelCatalogo({ producto, presentacion }: EleccionCatalogo): void {
+    if (!presentacion) return;
+    this.error.set(null);
+    this.picked.emit({
+      productoId: producto.productoId, presentacionId: presentacion.id, nombre: producto.nombre, unidad: presentacion.abreviatura,
+    });
+  }
 
   protected escanear(input: HTMLInputElement): void {
     const codigo = input.value.trim();

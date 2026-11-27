@@ -47,7 +47,7 @@ interface FilaEntrada {
 
       <section class="space-y-3">
         <p class="text-xs font-semibold uppercase tracking-wide text-muted">Agregar producto</p>
-        <app-product-picker (picked)="agregar($event)" />
+        <app-product-picker [catalogo]="true" [depositoId]="depositoId()" (picked)="agregar($event)" />
       </section>
 
       @for (f of filas(); track f.uid) {

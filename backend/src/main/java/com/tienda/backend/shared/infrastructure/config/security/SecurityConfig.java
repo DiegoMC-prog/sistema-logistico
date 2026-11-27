@@ -226,6 +226,10 @@ public class SecurityConfig {
                                 .hasAnyAuthority(INVENTARIO_VER, INVENTARIO_MOVER)
                         .requestMatchers("/api/v1/inventario/**").hasAuthority(INVENTARIO_MOVER)
 
+                        // Catalogo (solo lectura) para elegir productos al vender o al mover inventario
+                        .requestMatchers(HttpMethod.GET, "/api/v1/catalogo")
+                                .hasAnyAuthority(VENTA_CREAR, INVENTARIO_VER, INVENTARIO_MOVER)
+
                         // Denegar por defecto: un módulo nuevo debe declarar aquí su permiso antes de quedar accesible
                         .requestMatchers("/api/v1/**").denyAll()
                         .anyRequest().authenticated()
