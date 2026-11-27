@@ -1,0 +1,73 @@
+name: sistema-logistico
+
+services:
+  db:
+    image: postgres:17
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-tienda_db}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Defina DB_PASSWORD en el archivo .env}
+      TZ: ${TZ:-America/La_Paz}
+      PGTZ: ${TZ:-America/La_Paz}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      # -h 127.0.0.1: durante la inicializacion el servidor solo escucha por socket y no debe contar como listo
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U postgres -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  # Servidor de correo de pruebas: los correos (p. ej. recuperar contrasena) se ven en http://localhost:8025
+  mail:
+    image: axllent/mailpit
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${MAIL_UI_PORT:-8025}:8025"
+
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      mail:
+        condition: service_started
+    # La configuracion esta en .env. Aqui solo queda el cableado interno entre contenedores, que no se cambia
+    env_file: .env
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: postgres
+      SERVER_PORT: 8080
+      # Detras de Nginx: la IP real del cliente llega en X-Forwarded-For (limite de solicitudes por IP)
+      SERVER_FORWARD_HEADERS_STRATEGY: native
+    healthcheck:
+      test: ["CMD", "bash", "-c", "</dev/tcp/127.0.0.1/8080"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 20s
+
+  web:
+    build: ./frontend
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      # Solo este equipo. Desde fuera se entra por el tunel (nginx confia en sus cabeceras)
+      - "127.0.0.1:${WEB_PORT:-80}:80"
+
+  # Demostracion por Internet sin dominio ni cuenta (Cloudflare quick tunnel). No arranca salvo que se pida:
+  #   docker compose --profile demo up -d
+  tunel:
+    image: cloudflare/cloudflared:latest
+    profiles: ["demo"]
+    restart: unless-stopped
+    command: tunnel --no-autoupdate --url http://web:80
+    depends_on:
+      - web
+
+volumes:
+  pgdata:

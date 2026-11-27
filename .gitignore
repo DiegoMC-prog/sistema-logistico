@@ -6,11 +6,13 @@
 *.md
 # ...salvo el README de la raiz
 !/README.md
+!/DOCKER.md
 
 # Secretos y configuracion local
 .env
 .env.*
 !.env.example
+!.env.docker.example
 
 # Dependencias y compilados
 node_modules/
