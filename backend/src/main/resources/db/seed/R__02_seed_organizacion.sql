@@ -55,7 +55,7 @@ BEGIN
     -- ---------------------------------------------------------------- roles (52 = 4 base + 48 por sucursal)
     INSERT INTO roles (nombre, created_by, updated_by)
     SELECT p.puesto || ' ' || z.zona, 'SEED', 'SEED'
-    FROM unnest(ARRAY['CAJERO', 'REPOSITOR', 'SUPERVISOR DE CAJA', 'ENCARGADO DE SUCURSAL']) AS p(puesto)
+    FROM unnest(ARRAY['CAJERO', 'VENDEDOR', 'SUPERVISOR DE CAJA', 'ENCARGADO DE SUCURSAL']) AS p(puesto)
     CROSS JOIN unnest(v_zonas) AS z(zona);
 
     -- Cajeros y repositores heredan los permisos de los roles base de V5
@@ -64,7 +64,7 @@ BEGIN
     FROM roles r
     JOIN roles base ON base.nombre = split_part(r.nombre, ' ', 1) AND base.created_by <> 'SEED'
     JOIN rol_permiso rp ON rp.rol_id = base.id
-    WHERE r.created_by = 'SEED' AND (r.nombre LIKE 'CAJERO %' OR r.nombre LIKE 'REPOSITOR %');
+    WHERE r.created_by = 'SEED' AND (r.nombre LIKE 'CAJERO %' OR r.nombre LIKE 'VENDEDOR %');
 
     -- Supervisor de caja: lo del cajero + supervision, anulaciones, precios y reportes de caja
     INSERT INTO rol_permiso (rol_id, permiso_id)
@@ -107,7 +107,7 @@ BEGIN
     JOIN roles r ON r.created_by = 'SEED' AND r.nombre =
         CASE
             WHEN u.username LIKE 'cajero%' THEN 'CAJERO ' || v_zonas[1 + (substr(u.username, 7)::int - 1) % 12]
-            WHEN u.username LIKE 'repositor%' THEN 'REPOSITOR ' || v_zonas[1 + (substr(u.username, 10)::int - 1) % 12]
+            WHEN u.username LIKE 'repositor%' THEN 'VENDEDOR ' || v_zonas[1 + (substr(u.username, 10)::int - 1) % 12]
             WHEN u.username LIKE 'supervisor%' THEN 'SUPERVISOR DE CAJA ' || v_zonas[1 + (substr(u.username, 11)::int - 1) % 12]
             WHEN u.username LIKE 'encargado%' THEN 'ENCARGADO DE SUCURSAL ' || v_zonas[1 + (substr(u.username, 10)::int - 1) % 12]
         END

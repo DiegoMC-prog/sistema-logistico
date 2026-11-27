@@ -35,7 +35,7 @@ Es un monorepo con dos aplicaciones independientes:
 **Seguridad**
 - Login con JWT (token de acceso corto y refresh token), recuperación de contraseña por correo y revocación de sesiones.
 - Roles y permisos; el frontend oculta menús, rutas y botones según los permisos y el backend siempre los valida.
-- Roles predefinidos: `ADMIN`, `CAJERO`, `REPOSITOR` y `ENCARGADO_COMPRAS`.
+- Roles predefinidos: `ADMIN`, `CAJERO`, `VENDEDOR` y `ENCARGADO_COMPRAS`. Hubo una confusión con el rol `REPOSITOR`: se cambia a `VENDEDOR`.
 
 ---
 
