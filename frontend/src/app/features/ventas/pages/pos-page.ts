@@ -5,6 +5,7 @@ import { RouterLink } from '@angular/router';
 import { Observable, catchError, throwError, timer, switchMap } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
 import { errorMessage } from '../../../core/api/api-error';
+import { DescargasService } from '../../../core/api/descargas.service';
 import { AuthService } from '../../../core/auth/auth.service';
 import { PERMISOS } from '../../../core/auth/permisos';
 import { Btn, IconBtn } from '../../../shared/ui/button';
@@ -215,9 +216,12 @@ interface PagoFila {
 
     @if (nota(); as n) {
       <app-modal title="Venta registrada" size="lg" (closed)="nuevaVenta()">
-        <div class="p-5"><app-nota-venta [venta]="n" /></div>
+        <div class="space-y-3 p-5">
+          @if (errorPdf()) { <p class="alert-error" role="alert">{{ errorPdf() }}</p> }
+          <app-nota-venta [venta]="n" />
+        </div>
         <ng-container modal-footer>
-          <button appBtn variant="secondary" type="button" (click)="imprimir()">Imprimir</button>
+          <button appBtn variant="secondary" icon="download" type="button" [disabled]="descargando()" (click)="descargarPdf(n)">Descargar PDF</button>
           <button appBtn type="button" (click)="nuevaVenta()">Nueva venta</button>
         </ng-container>
       </app-modal>
@@ -243,6 +247,9 @@ export class PosPage {
   /** Depósito de la caja del turno: de ahí sale el stock que muestra el catálogo. */
   protected readonly depositoId = signal<number | null>(null);
   protected readonly versionCatalogo = signal(0);
+  private readonly descargas = inject(DescargasService);
+  protected readonly descargando = signal(false);
+  protected readonly errorPdf = signal<string | null>(null);
   protected readonly cargandoTurno = signal(true);
   protected readonly errorTurno = signal<string | null>(null);
   protected readonly cajas = signal<Caja[]>([]);
@@ -514,7 +521,15 @@ export class PosPage {
     this.claveActual = nuevaClave();
   }
 
-  protected imprimir(): void {
-    globalThis.print();
+  protected descargarPdf(venta: Venta): void {
+    this.descargando.set(true);
+    this.errorPdf.set(null);
+    this.descargas.descargar(`ventas/${venta.id}/pdf`, `NotaVenta-${venta.numeroVenta}.pdf`).subscribe({
+      next: () => this.descargando.set(false),
+      error: (e) => {
+        this.descargando.set(false);
+        this.errorPdf.set(errorMessage(e, 'No se pudo generar el PDF'));
+      },
+    });
   }
 }

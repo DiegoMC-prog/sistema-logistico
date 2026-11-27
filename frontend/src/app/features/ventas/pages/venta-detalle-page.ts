@@ -3,6 +3,7 @@ import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { errorMessage } from '../../../core/api/api-error';
+import { DescargasService } from '../../../core/api/descargas.service';
 import { Page } from '../../../core/api/page.model';
 import { AuthService } from '../../../core/auth/auth.service';
 import { PERMISOS } from '../../../core/auth/permisos';
@@ -29,7 +30,7 @@ import { VentasService } from '../data/ventas.service';
 
       @if (venta(); as v) {
         <div class="flex flex-wrap justify-end gap-3">
-          <button appBtn variant="secondary" icon="receipt" (click)="imprimir()">Imprimir</button>
+          <button appBtn variant="secondary" icon="download" [disabled]="descargando()" (click)="descargarPdf()">Descargar PDF</button>
           @if (v.estado === 'COMPLETADA') {
             @if (puedeDevolver) {
               <button appBtn variant="secondary" icon="undo" (click)="devolucionOpen.set(true)">Devolver</button>
@@ -92,6 +93,8 @@ import { VentasService } from '../data/ventas.service';
 })
 export class VentaDetallePage {
   private readonly ventas = inject(VentasService);
+  private readonly descargas = inject(DescargasService);
+  protected readonly descargando = signal(false);
   private readonly devolucionesService = inject(DevolucionesService);
   private readonly auth = inject(AuthService);
   private readonly id = Number(inject(ActivatedRoute).snapshot.paramMap.get('id'));
@@ -170,7 +173,16 @@ export class VentaDetallePage {
     });
   }
 
-  protected imprimir(): void {
-    globalThis.print();
+  protected descargarPdf(): void {
+    const v = this.venta();
+    if (!v) return;
+    this.descargando.set(true);
+    this.descargas.descargar(`ventas/${v.id}/pdf`, `NotaVenta-${v.numeroVenta}.pdf`).subscribe({
+      next: () => this.descargando.set(false),
+      error: (e) => {
+        this.descargando.set(false);
+        this.error.set(errorMessage(e, 'No se pudo generar el PDF'));
+      },
+    });
   }
 }

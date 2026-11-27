@@ -3,6 +3,7 @@ import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { errorMessage } from '../../../core/api/api-error';
+import { DescargasService } from '../../../core/api/descargas.service';
 import { Badge } from '../../../shared/ui/badge';
 import { Btn } from '../../../shared/ui/button';
 import { Card } from '../../../shared/ui/card';
@@ -33,7 +34,11 @@ import { CreditosService } from '../data/creditos.service';
               @else { Crédito no habilitado actualmente }
             </p>
           </div>
-          <button appBtn icon="dollar" [disabled]="e.deudaTotal <= 0" (click)="abrirAbono()">Registrar abono</button>
+          <div class="flex flex-wrap gap-3">
+            <button appBtn variant="secondary" icon="download" [disabled]="descargando()"
+              (click)="descargar('clientes/' + e.clienteId + '/estado-cuenta/pdf', 'EstadoCuenta.pdf')">Estado de cuenta (PDF)</button>
+            <button appBtn icon="dollar" [disabled]="e.deudaTotal <= 0" (click)="abrirAbono()">Registrar abono</button>
+          </div>
         </div>
 
         <div class="grid gap-4 sm:grid-cols-3">
@@ -123,6 +128,7 @@ import { CreditosService } from '../data/creditos.service';
     @if (comprobante(); as a) {
       <app-modal title="Comprobante de abono" (closed)="comprobante.set(null)">
         <div class="space-y-3 p-5 text-sm">
+          @if (error()) { <p class="alert-error" role="alert">{{ error() }}</p> }
           <p class="text-center text-base font-bold text-ink">{{ a.numeroAbono }}</p>
           <dl class="space-y-1">
             <div class="flex justify-between"><dt class="text-muted">Cliente</dt><dd class="text-ink">{{ a.clienteNombre }}</dd></div>
@@ -140,7 +146,8 @@ import { CreditosService } from '../data/creditos.service';
           </ul>
         </div>
         <ng-container modal-footer>
-          <button appBtn variant="secondary" type="button" (click)="imprimir()">Imprimir</button>
+          <button appBtn variant="secondary" icon="download" type="button" [disabled]="descargando()"
+            (click)="descargar('abonos/' + a.id + '/pdf', 'Abono-' + a.numeroAbono + '.pdf')">Descargar PDF</button>
           <button appBtn type="button" (click)="comprobante.set(null)">Cerrar</button>
         </ng-container>
       </app-modal>
@@ -150,6 +157,8 @@ import { CreditosService } from '../data/creditos.service';
 export class EstadoCuentaPage {
   private readonly service = inject(CreditosService);
   private readonly metodosService = inject(MetodosPagoService);
+  private readonly descargas = inject(DescargasService);
+  protected readonly descargando = signal(false);
   private readonly fb = inject(FormBuilder).nonNullable;
   private readonly id = Number(inject(ActivatedRoute).snapshot.paramMap.get('id'));
 
@@ -232,7 +241,15 @@ export class EstadoCuentaPage {
       });
   }
 
-  protected imprimir(): void {
-    globalThis.print();
+  protected descargar(ruta: string, nombre: string): void {
+    this.descargando.set(true);
+    this.error.set(null);
+    this.descargas.descargar(ruta, nombre).subscribe({
+      next: () => this.descargando.set(false),
+      error: (e) => {
+        this.descargando.set(false);
+        this.error.set(errorMessage(e, 'No se pudo generar el PDF'));
+      },
+    });
   }
 }

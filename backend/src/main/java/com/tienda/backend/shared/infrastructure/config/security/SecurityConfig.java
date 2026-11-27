@@ -162,7 +162,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.DELETE, "/api/v1/depositos/*").hasAuthority(DEPOSITO_ELIMINAR)
 
                         // Creditos (cuentas por cobrar y abonos): van antes de /clientes/**, que las taparia
-                        .requestMatchers(HttpMethod.GET, "/api/v1/clientes/*/estado-cuenta", "/api/v1/abonos/**",
+                        .requestMatchers(HttpMethod.GET, "/api/v1/clientes/*/estado-cuenta",
+                                "/api/v1/clientes/*/estado-cuenta/pdf", "/api/v1/abonos/**",
                                 "/api/v1/creditos/**").hasAuthority(CREDITO_GESTIONAR)
                         .requestMatchers(HttpMethod.POST, "/api/v1/clientes/*/abonos").hasAuthority(CREDITO_GESTIONAR)
 
